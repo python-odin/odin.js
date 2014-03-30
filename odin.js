@@ -42,13 +42,25 @@
   // --------------------
 
   // Error raised when validation fails
-  var ValidationError = Odin.ValidationError = function (message, code) {
+  var ValidationError = Odin.ValidationError = function (message, code, params) {
     this.name = "ValidationError";
-    this.messsage = message;
-    this.code = code;
+
+    if (_.isObject(message)) {
+      this.messageObject = message;
+    } else if (_.isArray(message)) {
+      this.messages = message;
+    } else {
+      this.messages = [message];
+      this.code = code;
+      this.params = params;
+    }
   };
   ValidationError.prototype = new Error();
-  ValidationError.prototype.constructor = ValidationError;
+
+  // Set up all inheritable **Odin.ValidationError** properties and methods.
+  _.extend(ValidationError.prototype, {
+    constructor: ValidationError
+  });
 
   // Odin.Field
   // ----------
@@ -70,7 +82,6 @@
     this.creationCounter = fieldCreationCounter++;
 
     _.extend(this.errorMessages, {
-
     }, this.errorMessages);
   };
 
@@ -115,7 +126,12 @@
           validator(value);
         } catch (e) {
           if (e instanceof ValidationError) {
-
+            if (_.has(e, 'code') && _.contains(this.errorMessages, e.code)) {
+              var message = self.errorMessages[e.code];
+              errors.push(message)
+            } else {
+              errors.push(e.messages)
+            }
           } else {
             throw e;
           }
@@ -123,20 +139,33 @@
       }, this);
 
       if (errors.length) {
-
+        throw new ValidationError(errors);
       }
     },
 
     validate: function (value) {
+      if (this.choices != null && !isEmpty(value)) {
+        if (_.any(this.choices, function (v){ return v[0] === value; })) {
+          return;
+        }
+        throw new ValidationError(this.errorMessages['invalid_choice']);
+      }
 
+      if (value == null && !this.allowNull) {
+        throw new ValidationError(this.errorMessages['null']);
+      }
     },
 
     // Convert the value's type and run validation. Validation errors from
     // toJavaScript and validate are propagated. The correct value is returned
     // if no error is raised.
     clean: function (value) {
+      if (typeof value === 'undefined') {
+        value = this.useDefaultIfNotProvided ? this.getDefault() : null;
+      }
       value = this.toJavaScript(value);
       this.validate(value);
+      this.runValidators(value);
       return value;
     },
 
@@ -156,13 +185,49 @@
 
     // Returns the value of this field in the given resource instance.
     valueFromObject: function (obj) {
-      return obj.hasOwnProperty(this.name) ? obj[this.name] : undefined;
+      return _.has(obj, this.name) ? obj[this.name] : undefined;
     },
 
     // Prepare value for use in JSON format.
     toJSON: function (value) {
       return value;
     }
+  });
+
+  // Odin.IntegerField
+  // -----------------
+
+  Odin.IntegerField = function (options) {
+    // TODO: minValue, maxValue
+    Field.prototype.constructor.call(options || {});
+  };
+
+  // Setup all inheritable **Odin.IntegerField** properties and methods.
+  _.extend(Odin.IntegerField.prototype, Field.prototype, {
+    toJavaScript: function (value) {
+      if (isEmpty(value)) {
+        return null;
+      }
+
+      var len = value.length;
+      value = parseInt(value);
+      if (value === null && len > 0) {
+        throw new ValidationError('Invalid integer value.')
+      }
+      return value;
+    }
+  });
+
+  // Odin.StringField
+  // -----------------
+
+  Odin.StringField = function (options) {
+    // TODO: minLength, maxLength
+    Field.prototype.constructor.call(options || {});
+  };
+
+  // Setup all inheritable **Odin.StringField** properties and methods.
+  _.extend(Odin.StringField.prototype, Field.prototype, {
   });
 
   // Odin.Resource
@@ -195,7 +260,7 @@
       if (name === null) return;
 
       // Handle both `"attr", value` and an object of multiple attr/value combinations.
-      if (typeof name === 'object') {
+      if (_.isObject(name)) {
         attrs = attr;
         options = value;
       } else {
@@ -211,7 +276,9 @@
       // Set values on the resources
       foreach(attrs, function (value, attr) {
         var field = this._meta.fields[attr];
-        if (typeof field === 'undefined') throw new Error('Unknown field `' + attr + '`');
+        if (_.isUndefined(field)) {
+          throw new Error('Unknown field `' + attr + '`');
+        }
 
         // Validate and assign value and track changes
         value = field.clean(value);
@@ -231,17 +298,42 @@
     },
 
     fullClean: function () {
+      var errors = {};
 
+      eachField(this, function (field) {
+        var value = field.valueFromObject(this);
+        try {
+          this[field.name] = field.clean(value);
+        } catch (e) {
+          if (e instanceof ValidationError) {
+            errors[field.name] = e.messages;
+          } else {
+            throw e;
+          }
+        }
+      }, this);
+
+      if (!_.isEmpty(errors)) {
+        throw new ValidationError(errors);
+      }
     },
 
     toString: function () {
-
+      return "<" + this._meta.fullName + ">";
     },
 
     toJSON: function () {
 
     }
   });
+
+  // Custom version of extend that builds the internal meta object.
+  Resource.extend = function (fields, meta_options, protoProps, staticProps) {
+    var parent = this,
+        parentMeta = '_meta' in parent.prototype ? parent.prototype._meta : null,
+        child;
+
+  };
 
   // Helpers
   // -------
@@ -253,7 +345,15 @@
 
   // Returns true if the supplied value is "empty"
   var isEmpty = Odin.isEmpty = function(value) {
-      return value === null || _.isUndefined(value) || value === '';
+      return _.isNull(value) || _.isUndefined(value) || value === '';
   };
+
+  // If an object contains a key return the value; else set the key to the default and return the default.
+  function setDefault(obj, key, def) {
+    if (!_.has(obj, key)) {
+      obj[key] = def;
+    }
+    return obj[key];
+  }
 
 }));
