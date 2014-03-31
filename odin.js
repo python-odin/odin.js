@@ -62,6 +62,25 @@
     constructor: ValidationError
   });
 
+  // Validators
+  // ----------
+  var v = Odin.validators = {
+    minValueValidator: function (minValue) {
+      return function (value) {
+        if (value < minValue) {
+          throw new ValidationError("", 'min_value', {'minValue': minValue});
+        }
+      }
+    },
+    maxValueValidator: function (maxValue) {
+      return function (value) {
+        if (value > maxValue) {
+          throw new ValidationError("", 'max_value', {'maxValue': maxValue});
+        }
+      }
+    }
+  };
+
   // Odin.Field
   // ----------
   var fieldCreationCounter = 0;
@@ -81,8 +100,8 @@
 
     this.creationCounter = fieldCreationCounter++;
 
-    _.extend(this.errorMessages, {
-    }, this.errorMessages);
+//    _.extend(this.errorMessages, {
+//    }, this.errorMessages);
   };
 
   // Set up all inheritable **Odin.Field** properties and methods.
@@ -171,16 +190,12 @@
 
     // Returns a boolean of whether this field has a default value.
     hasDefault: function() {
-      return typeof this.defaultValue === 'undefined';
+      return !_.isUndefined(this.defaultValue);
     },
 
     // Returns the default value for this field.
     getDefault: function () {
-      if (this.hasDefault()) {
-        var defaultValue = this.defaultValue;
-        return (typeof defaultValue === 'function') ? defaultValue() : defaultValue;
-      }
-      return null;
+      return _.result(this, 'defaultValue');
     },
 
     // Returns the value of this field in the given resource instance.
@@ -198,8 +213,15 @@
   // -----------------
 
   Odin.IntegerField = function (options) {
-    // TODO: minValue, maxValue
     Field.prototype.constructor.call(options || {});
+
+    if (!_.isNumber(this.minValue)) {
+      this.validators.push(v.minValueValidator(this.minValue));
+    }
+    if (!_.isNumber(this.maxValue)) {
+      this.validators.push(v.maxValueValidator(this.maxValue));
+    }
+
   };
 
   // Setup all inheritable **Odin.IntegerField** properties and methods.
@@ -344,16 +366,17 @@
   };
 
   // Returns true if the supplied value is "empty"
-  var isEmpty = Odin.isEmpty = function(value) {
+  var isEmpty = Odin.isEmpty = function (value) {
       return _.isNull(value) || _.isUndefined(value) || value === '';
   };
 
   // If an object contains a key return the value; else set the key to the default and return the default.
-  function setDefault(obj, key, def) {
+  var setDefault = Odin.setDefault = function (obj, key, value) {
     if (!_.has(obj, key)) {
-      obj[key] = def;
+      obj[key] = value || null;
     }
     return obj[key];
   }
 
+  return Odin;
 }));
