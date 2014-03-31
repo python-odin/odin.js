@@ -5,20 +5,25 @@
   "main": "odin.js",
   "license": "BSD",
   "author": "Tim Savage <tim.savage@poweredbypenguins.org>",
-  "keywords": ["odin", "object-mapping", "javascript", "backbone"],
+  "keywords": [
+    "odin",
+    "object-mapping",
+    "javascript",
+    "backbone"
+  ],
   "dependencies": {
     "backbone": "~1.1.2"
   },
   "devDependencies": {
-    "browserify": "^3.38.0",
-    "watchify": "^0.6.3",
-    "beefy": "^1.1.0"
+    "phantomjs": "1.9.7-1",
+    "uglifyjs": "^2.3.6"
   },
   "repository": {
     "type": "git",
     "url": "http://github.com/timsavage/odin-js.git"
   },
   "scripts": {
-    "test": "phantomjs test/vendor/runner.js test/index.html?noglobals=true"
+    "test": "phantomjs test/vendor/runner.js test/index.html?noglobals=true&coverage=true",
+    "build": "uglifyjs odin.js --mangle --source-map odin-min.map -o odin-min.js"
   }
 }
