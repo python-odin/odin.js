@@ -38,6 +38,9 @@
       return this;
   };
 
+  // Internal resource cache.
+  var _resourceTypeCache = {};
+
   // Odin.ValidationError
   // --------------------
 
@@ -56,15 +59,16 @@
     }
   };
   ValidationError.prototype = new Error();
+  ValidationError.constructor = ValidationError;
 
-  // Set up all inheritable **Odin.ValidationError** properties and methods.
-  _.extend(ValidationError.prototype, {
-    constructor: ValidationError
-  });
 
   // Validators
   // ----------
   var v = Odin.validators = {
+    // MinValueValidator
+    // -----------------
+
+    // Validates that a value is greater than or equal to a particular value
     minValueValidator: function (minValue) {
       return function (value) {
         if (value < minValue) {
@@ -80,6 +84,7 @@
       }
     }
   };
+
 
   // Odin.Field
   // ----------
@@ -125,10 +130,10 @@
       }
     },
 
-    contributeToResource: function (resource, name) {
+    contributeToObject: function (obj, name) {
       this.setAttributesFromName(name);
-      this.resource = resource;
-      resource._meta.addField(this);
+      this.resource = obj;
+      obj._meta.addField(this);
     },
 
     // Convert a value to a native JavaScript type.
@@ -213,15 +218,14 @@
   // -----------------
 
   Odin.IntegerField = function (options) {
-    Field.prototype.constructor.call(options || {});
+    Field.prototype.constructor.call(this, options || {});
 
-    if (!_.isNumber(this.minValue)) {
+    if (_.isNumber(this.minValue)) {
       this.validators.push(v.minValueValidator(this.minValue));
     }
-    if (!_.isNumber(this.maxValue)) {
+    if (_.isNumber(this.maxValue)) {
       this.validators.push(v.maxValueValidator(this.maxValue));
     }
-
   };
 
   // Setup all inheritable **Odin.IntegerField** properties and methods.
@@ -245,11 +249,66 @@
 
   Odin.StringField = function (options) {
     // TODO: minLength, maxLength
-    Field.prototype.constructor.call(options || {});
+    Field.prototype.constructor.call(this, options || {});
   };
 
   // Setup all inheritable **Odin.StringField** properties and methods.
   _.extend(Odin.StringField.prototype, Field.prototype, {
+  });
+
+
+  // ResourceOptions
+  // ---------------
+
+  var META_OPTION_NAMES = ['namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural'];
+
+  function ResourceOptions(metaOptions) {
+    this.metaOptions = metaOptions || {};
+    this.parents = [];
+    this.fields = [];
+
+    this.name = null;
+    this.namespace = undefined;
+    this.verboseName = null;
+    this.verboseNamePlural = null;
+    this.abstract = false;
+    this.typeField = '$';
+  }
+
+  // Setup all inheritable **ResourceOptions** properties and methods.
+  _.extend(ResourceOptions.prototype, {
+    contributeToObject: function (obj, name) {
+      obj._meta = this;
+      this.name = name;
+
+      if (this.metaOptions) {
+        var keys = _.keys(this.metaOptions), unknownKeys = _.difference(keys, META_OPTION_NAMES);
+        if (unknownKeys.length > 0) {
+          throw new Error('Unknown meta option on ' + name + ': ' + unknownKeys.join(', '));
+        }
+        _.extend(this, this.metaOptions);
+
+        delete this.metaOptions;
+      }
+
+      if (_.isNull(this.verboseName)) {
+        this.verboseName = this.name.replace('_', ' ').trim('_ ');
+      }
+      if (_.isNull(this.verboseNamePlural)) {
+        this.verboseNamePlural = this.verboseName + 's';
+      }
+    },
+
+    addField: function (field) {
+      this.fields.push(field);
+    },
+
+    getResourceName: function () {
+      if (_.isUndefined(this._resourceName)) {
+        this._resourceName = (_.isUndefined(this.namespace) ? '' : this.namespace + '.') + this.name;
+      }
+      return this._resourceName;
+    }
   });
 
   // Odin.Resource
@@ -350,15 +409,59 @@
   });
 
   // Custom version of extend that builds the internal meta object.
-  Resource.extend = function (fields, meta_options, protoProps, staticProps) {
+  Resource.extend = function (name, fields, metaOptions, protoProps, staticProps) {
     var parent = this,
-        parentMeta = '_meta' in parent.prototype ? parent.prototype._meta : null,
-        child;
+        baseMeta = _.has(parent, '_meta') ? parent._meta : null,
+        NewResource = function(){ return parent.apply(this, arguments);};
 
+    // Add static properties to the constructor function, if supplied.
+    _.extend(NewResource, parent, staticProps);
+
+    // Set the prototype chain to inherit from `parent`, without calling
+    // `parent`'s constructor function.
+    var Surrogate = function(){ this.constructor = NewResource; };
+    Surrogate.prototype = parent.prototype;
+    NewResource.prototype = new Surrogate;
+
+    // Add prototype properties (instance properties) to the subclass,
+    // if supplied.
+    if (protoProps) _.extend(NewResource.prototype, protoProps);
+
+    // Set a convenience property in case the parent's prototype is needed
+    // later.
+    NewResource.__super__ = parent.prototype;
+
+    addToObject(NewResource, name, new ResourceOptions(metaOptions));
+
+    // Inherit namespace
+    if (_.isUndefined(NewResource._meta.namespace) && baseMeta) {
+      NewResource._meta.namespace = baseMeta.namespace;
+    }
+
+    // Register fields with the resource
+    foreach(fields, function (field, name) {
+      addToObject(NewResource, name, field);
+    }, this);
+
+    if (!NewResource._meta.abstract) {
+      _resourceTypeCache[NewResource._meta.getResourceName()] = NewResource;
+    }
+
+    return NewResource;
   };
+
 
   // Helpers
   // -------
+
+  // Add a object to a class, if it has a contribute method use that.
+  function addToObject(cls, name, value) {
+    if (_.isFunction(value.contributeToObject)) {
+      value.contributeToObject(cls, name);
+    } else {
+      cls[name] = value;
+    }
+  }
 
   // A foreach style method to return all fields on a resource
   var eachField = Odin.eachField = function (resource, iterator, context) {
@@ -376,7 +479,7 @@
       obj[key] = value || null;
     }
     return obj[key];
-  }
+  };
 
   return Odin;
 }));
