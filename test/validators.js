@@ -1,11 +1,11 @@
 (function () {
-  var validators = Odin.validators;
+  var validators = Odin.validators, ValidationError = Odin.ValidationError;
 
   function validatorRaises(validator, value, code) {
     try {
       validator(value);
     } catch (e) {
-      if (e instanceof Odin.ValidationError) {
+      if (e instanceof ValidationError) {
         equal(e.code, code, "Invalid code");
       } else {
         QUnit.push(false, e, 'ValidationError', 'Raised exception not ValidationError');
@@ -28,6 +28,6 @@
 
     v(9);
     v(10);
-    throws(function () {v(11)}, Odin.ValidationError);
+    validatorRaises(v, 11, 'max_value');
   });
 }());
