@@ -118,7 +118,7 @@
     // Validates that a length of the value is less than or equal to a particular value
     maxLengthValidator: function (maxLength) {
       return function (value) {
-        if (value > maxLength) {
+        if (value.length > maxLength) {
           throw new ValidationError("", 'max_length', {'maxLength': maxLength});
         }
       }

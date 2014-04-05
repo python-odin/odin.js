@@ -30,4 +30,20 @@
     v(10);
     validatorRaises(v, 11, 'max_value');
   });
+
+  test('minLengthValidator', function (){
+    var v = validators.minLengthValidator(10);
+
+    validatorRaises(v, '01234567', 'min_length');
+    v('0123456789');
+    v('0123456789a');
+  });
+
+  test('maxLengthValidator', function (){
+    var v = validators.maxLengthValidator(10);
+
+    v('01234567');
+    v('0123456789');
+    validatorRaises(v, '0123456789a', 'max_length');
+  });
 }());
