@@ -87,10 +87,39 @@
         }
       }
     },
+
+    // MaxValueValidator
+    // -----------------
+
+    // Validates that a value is less than or equal to a particular value
     maxValueValidator: function (maxValue) {
       return function (value) {
         if (value > maxValue) {
           throw new ValidationError("", 'max_value', {'maxValue': maxValue});
+        }
+      }
+    },
+
+    // MinLengthValidator
+    // -----------------
+
+    // Validates that a length of the value is greater than or equal to a particular value
+    minLengthValidator: function (minLength) {
+      return function (value) {
+        if (value.length < minLength) {
+          throw new ValidationError("", 'min_length', {'minValue': minLength});
+        }
+      }
+    },
+
+    // MaxValueValidator
+    // -----------------
+
+    // Validates that a length of the value is less than or equal to a particular value
+    maxLengthValidator: function (maxLength) {
+      return function (value) {
+        if (value > maxLength) {
+          throw new ValidationError("", 'max_length', {'maxLength': maxLength});
         }
       }
     }
@@ -276,6 +305,24 @@
     }
   });
 
+  // Odin.StringField
+  // -----------------
+
+  Odin.StringField = function (options) {
+    Field.prototype.constructor.call(this, options);
+
+    if (_.isNumber(this.minLength)) {
+      this.validators.push(v.minLengthValidator(this.minLength));
+    }
+    if (_.isNumber(this.maxLength)) {
+      this.validators.push(v.maxLengthValidator(this.maxLength));
+    }
+  };
+
+  // Setup all inheritable **Odin.StringField** properties and methods.
+  _.extend(Odin.StringField.prototype, Field.prototype, {
+  });
+
   // Odin.ObjectAs field
   // -------------------
 
@@ -304,7 +351,7 @@
   // ------------------
 
   // Field that contains an array of resources.
-  var ArrayOf = Odin.ArrayOf = function (resource, options) {
+  Odin.ArrayOf = function (resource, options) {
     this.resource = resource;
 
     options = _.extend({
@@ -313,18 +360,6 @@
 
     Field.prototype.constructor.call(this, options);
   };
-
-  // Odin.StringField
-  // -----------------
-
-  Odin.StringField = function (options) {
-    // TODO: minLength, maxLength
-    Field.prototype.constructor.call(this, options || {});
-  };
-
-  // Setup all inheritable **Odin.StringField** properties and methods.
-  _.extend(Odin.StringField.prototype, Field.prototype, {
-  });
 
 
   // ResourceOptions
