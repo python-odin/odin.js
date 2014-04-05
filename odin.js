@@ -39,7 +39,18 @@
   };
 
   // Internal resource cache.
-  var _resourceTypeCache = {};
+  var resourceTypeCache = {};
+  Odin._addResource = function (resource) {
+    resourceTypeCache[resource._meta.getResourceName()] = resource;
+  };
+  Odin._getResource = function (resourceName) {
+    return resourceTypeCache[resourceName];
+  };
+  Odin._clearResources = function () {
+    console.warn('This should only be used for test cases!');
+    resourceTypeCache = {};
+  };
+
 
   // Odin.ValidationError
   // --------------------
@@ -104,9 +115,6 @@
     }, options);
 
     this.creationCounter = fieldCreationCounter++;
-
-//    _.extend(this.errorMessages, {
-//    }, this.errorMessages);
   };
 
   // Set up all inheritable **Odin.Field** properties and methods.
@@ -218,7 +226,7 @@
   // -----------------
 
   Odin.IntegerField = function (options) {
-    Field.prototype.constructor.call(this, options || {});
+    Field.prototype.constructor.call(this, options);
 
     if (_.isNumber(this.minValue)) {
       this.validators.push(v.minValueValidator(this.minValue));
@@ -244,6 +252,68 @@
     }
   });
 
+  // Odin.FloatField
+  // -----------------
+
+  // Field that represents a integer.
+  var FloatField = Odin.FloatField = function (options) {
+    Field.prototype.constructor.call(options);
+  };
+
+  // Setup all inheritable **odin.ObjectAs** properties and methods.
+  _.extend(FloatField.prototype, Field.prototype, {
+    // Convert a value to a field type
+    toJavaScript: function (value) {
+      if (isEmpty(value)) return null;
+
+      // Ensure that float parsing doesn't silently return null.
+      var length = value.length;
+      value = parseFloat(value);
+      if (value === null && length > 0) {
+        throw ValidationError("Invalid float value");
+      }
+      return value;
+    }
+  });
+
+  // Odin.ObjectAs field
+  // -------------------
+
+  // Field that contains a sub-resource.
+  var ObjectAs = Odin.ObjectAs = function (resource, options) {
+    this.resource = resource;
+
+    Field.prototype.constructor.call(this, options);
+  };
+
+  // Setup all inheritable **odin.ObjectAs** properties and methods.
+  _.extend(ObjectAs.prototype, Field.prototype, {
+    // Convert a value to a field type
+    toJavaScript: function (value) {
+      if (value === null || _.isUndefined(value)) return null;
+      return createResourceFromJson(value, this.resource);
+    },
+
+    // Prepare a value for insertion into a JSON structure
+    toJSON: function (value) {
+      return _.isNull(value) ? null : value.toJSON();
+    }
+  });
+
+  // Odin.ArrayOf field
+  // ------------------
+
+  // Field that contains an array of resources.
+  var ArrayOf = Odin.ArrayOf = function (resource, options) {
+    this.resource = resource;
+
+    options = _.extend({
+      defaultValue: function () { return []; }
+    }, options);
+
+    Field.prototype.constructor.call(this, options);
+  };
+
   // Odin.StringField
   // -----------------
 
@@ -260,7 +330,8 @@
   // ResourceOptions
   // ---------------
 
-  var META_OPTION_NAMES = ['namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural'];
+  var META_OPTION_NAMES = ['namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural'],
+      DEFAULT_TYPE_FIELD = '$';
 
   function ResourceOptions(metaOptions) {
     this.metaOptions = metaOptions || {};
@@ -272,7 +343,7 @@
     this.verboseName = null;
     this.verboseNamePlural = null;
     this.abstract = false;
-    this.typeField = '$';
+    this.typeField = DEFAULT_TYPE_FIELD;
   }
 
   // Setup all inheritable **ResourceOptions** properties and methods.
@@ -319,7 +390,7 @@
 
     // Set resource fields to values supplied in values object. If a field is not supplied
     // use the field default.
-    eachField(this, function (field) {
+    eachField(this, function (f) {
       var val = values[f.name];
       if (typeof val === 'undefined') {
         val = f.getDefault();
@@ -444,12 +515,50 @@
     }, this);
 
     if (!NewResource._meta.abstract) {
-      _resourceTypeCache[NewResource._meta.getResourceName()] = NewResource;
+      Odin._addResource(NewResource);
     }
 
     return NewResource;
   };
 
+  // Create a resource instance from JSON data.
+  var createResourceFromJson = Odin.createResourceFromJson = function(data, resource, options) {
+    options = _.extend({
+      fullClean: true
+    }, options || {});
+
+    var key = _.isUndefined(resource) ? DEFAULT_TYPE_FIELD : resource._meta.typeField,
+        resourceName = data[key],
+        resourceType = Odin._getResource(resourceName);
+    if (_.isUndefined(resourceType)) {
+      throw new Error('Resource type `' + resourceName + '` not defined');
+    }
+
+    var attrs = {};
+    eachField(resourceType, function (f) {
+      attrs[f.name] = f.valueFromObject(data);
+    });
+
+    var newResource = new resourceType(attrs);
+    if (options.fullClean) {
+      newResource.fullClean();
+    }
+    return newResource;
+  };
+
+  Odin.buildObjectGraph = function(data, resource) {
+    if (_.isArray(data)) {
+      return _.map(data, function (d) {
+        return createResourceFromJson(d, resource);
+      });
+    }
+
+    if (_.isObject(data)) {
+      return createResourceFromJson(data, resource)
+    }
+
+    return d;
+  };
 
   // Helpers
   // -------
