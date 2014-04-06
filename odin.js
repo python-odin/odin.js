@@ -602,18 +602,30 @@
     return NewResource;
   };
 
-  // Odin.ResourceCollection
-  // -----------------------
+  // Odin.ResourceArray
+  // ------------------
 
-  var ResourceCollection = Odin.ResourceCollection = function (resources, options) {
+  var ResourceArray = Odin.ResourceArray = function (resources, options) {
     options || (options = {});
     if (options.resource) this.resource = options.resource;
-
+    this.resources = resources || [];
   };
 
-  // Set up all inheritable **Odin.ResourceCollection** properties and methods.
-  _.extend(Resource.prototype, Backbone.Events, {
-    
+  // Set up all inheritable **Odin.ResourceArray** properties and methods.
+  _.extend(ResourceArray.prototype, Backbone.Events, {
+    push: function (resource) {
+      // TODO: Event
+      this.resources.push(resource);
+    },
+    pop: function () {
+      return this.resources.pop();
+    },
+    at: function (idx) {
+      return this.resources[idx];
+    },
+    each: function (iterator, context) {
+      foreach(this.resources, iterator, context);
+    }
   });
 
 
@@ -648,9 +660,9 @@
 
   Odin.buildObjectGraph = function(data, resource) {
     if (_.isArray(data)) {
-      return _.map(data, function (d) {
-        return createResourceFromJson(d, resource);
-      });
+      return new ResourceArray(_.map(data, function (d) {
+          return createResourceFromJson(d, resource);
+        }), resource);
     }
 
     if (_.isObject(data)) {
