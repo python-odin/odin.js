@@ -1,0 +1,9 @@
+{
+  "name"          : "odin.js",
+  "version"       : "0.1",
+  "main"          : "odin.js",
+  "dependencies"  : {
+    "backbone"  : ">=1.1.2"
+  },
+  "ignore"        : ["odin-min.js", "docs", "examples", "test", "*.yml", "*.map", ".html", "*.ico", ".editorconfig"]
+}
