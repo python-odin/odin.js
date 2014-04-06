@@ -126,11 +126,11 @@
   };
 
 
-  // Odin.Field
-  // ----------
+  // Odin.BaseField
+  // --------------
   var fieldCreationCounter = 0;
 
-  var Field = Odin.Field = function (options) {
+  var BaseField = Odin.BaseField = function (options) {
     _.extend(this, {
       verboseName: null,
       verboseNamePlural: null,
@@ -146,8 +146,8 @@
     this.creationCounter = fieldCreationCounter++;
   };
 
-  // Set up all inheritable **Odin.Field** properties and methods.
-  _.extend(Field.prototype, {
+  // Set up all inheritable **Odin.BaseField** properties and methods.
+  _.extend(BaseField.prototype, {
     defaultErrorMessages: {
       'invalid_choice': "Value is not a valid choice.",
       'null': "This field cannot be null.",
@@ -255,7 +255,7 @@
   // -----------------
 
   Odin.IntegerField = function (options) {
-    Field.prototype.constructor.call(this, options);
+    BaseField.prototype.constructor.call(this, options);
 
     if (_.isNumber(this.minValue)) {
       this.validators.push(v.minValueValidator(this.minValue));
@@ -266,7 +266,7 @@
   };
 
   // Setup all inheritable **Odin.IntegerField** properties and methods.
-  _.extend(Odin.IntegerField.prototype, Field.prototype, {
+  _.extend(Odin.IntegerField.prototype, BaseField.prototype, {
     toJavaScript: function (value) {
       if (isEmpty(value)) {
         return null;
@@ -286,11 +286,11 @@
 
   // Field that represents a integer.
   var FloatField = Odin.FloatField = function (options) {
-    Field.prototype.constructor.call(options);
+    BaseField.prototype.constructor.call(options);
   };
 
   // Setup all inheritable **odin.ObjectAs** properties and methods.
-  _.extend(FloatField.prototype, Field.prototype, {
+  _.extend(FloatField.prototype, BaseField.prototype, {
     // Convert a value to a field type
     toJavaScript: function (value) {
       if (isEmpty(value)) return null;
@@ -309,7 +309,7 @@
   // -----------------
 
   Odin.StringField = function (options) {
-    Field.prototype.constructor.call(this, options);
+    BaseField.prototype.constructor.call(this, options);
 
     if (_.isNumber(this.minLength)) {
       this.validators.push(v.minLengthValidator(this.minLength));
@@ -320,13 +320,13 @@
   };
 
   // Setup all inheritable **Odin.StringField** properties and methods.
-  _.extend(Odin.StringField.prototype, Field.prototype, {
+  _.extend(Odin.StringField.prototype, BaseField.prototype, {
   });
 
   // Odin.ObjectAs field
   // -------------------
 
-  // Field that contains a sub-resource.
+  // BaseField that contains a sub-resource.
   var ObjectAs = Odin.ObjectAs = function (resource, options) {
     this.resource = resource;
 
@@ -334,7 +334,7 @@
   };
 
   // Setup all inheritable **odin.ObjectAs** properties and methods.
-  _.extend(ObjectAs.prototype, Field.prototype, {
+  _.extend(ObjectAs.prototype, BaseField.prototype, {
     // Convert a value to a field type
     toJavaScript: function (value) {
       if (value === null || _.isUndefined(value)) return null;
@@ -358,14 +358,14 @@
       defaultValue: function () { return []; }
     }, options);
 
-    Field.prototype.constructor.call(this, options);
+    BaseField.prototype.constructor.call(this, options);
   };
 
 
   // ResourceOptions
   // ---------------
 
-  var META_OPTION_NAMES = ['namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural'],
+  var META_OPTION_NAMES = ['name', 'namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural'],
       DEFAULT_TYPE_FIELD = '$';
 
   function ResourceOptions(metaOptions) {
@@ -383,13 +383,13 @@
 
   // Setup all inheritable **ResourceOptions** properties and methods.
   _.extend(ResourceOptions.prototype, {
-    contributeToObject: function (obj, name) {
+    contributeToObject: function (obj) {
       obj._meta = this;
 
       if (this.metaOptions) {
         var keys = _.keys(this.metaOptions), unknownKeys = _.difference(keys, META_OPTION_NAMES);
         if (unknownKeys.length > 0) {
-          throw new Error('Unknown meta option on ' + name + ': ' + unknownKeys.join(', '));
+          throw new Error('Unknown meta option: ' + unknownKeys.join(', '));
         }
         _.extend(this, this.metaOptions);
 
