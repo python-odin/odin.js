@@ -3,13 +3,13 @@
 (function(root, factory) {
   // Set up Odin appropriately for the environment. Start with AMD.
   if (typeof define === 'function' && define.amd) {
-    define(['Backbone', 'underscore', 'exports'], function(Backbone, _, exports) {
+    define(['backbone', 'underscore', 'exports'], function(Backbone, _, exports) {
       root.Odin = factory(root, exports, Backbone, _);
     });
 
   // Next for Node.js or CommonJS.
   } else if (typeof exports !== 'undefined') {
-    var Backbone = require('Backbone'),
+    var Backbone = require('backbone'),
         _ = require('underscore');
     factory(root, exports, Backbone, _);
 
@@ -41,7 +41,7 @@
   // Internal resource cache.
   var resourceTypeCache = {};
   Odin._addResource = function (resource) {
-    resourceTypeCache[resource._meta.getResourceName()] = resource;
+    resourceTypeCache[resource._meta.getFullName()] = resource;
   };
   Odin._getResource = function (resourceName) {
     return resourceTypeCache[resourceName];
@@ -409,7 +409,7 @@
       this.fields.push(field);
     },
 
-    getResourceName: function () {
+    getFullName: function () {
       if (_.isUndefined(this._resourceName)) {
         this._resourceName = (_.isUndefined(this.namespace) ? '' : this.namespace + '.') + this.name;
       }
@@ -509,8 +509,15 @@
       return "<" + this._meta.fullName + ">";
     },
 
-    toJSON: function () {
 
+    // Return a copy of the model's `attributes` object.
+    toJSON: function() {
+      var attributes = {};
+      attributes[this._meta.typeField] = this._meta.getFullName();
+      eachField(this, function (f) {
+        attributes[f.name] = f.toJSON(f.valueFromObject(this));
+      }, this);
+      return attributes;
     }
   });
 
@@ -556,6 +563,24 @@
     return NewResource;
   };
 
+  // Odin.ResourceCollection
+  // -----------------------
+
+  var ResourceCollection = Odin.ResourceCollection = function (resources, options) {
+    options || (options = {});
+    if (options.resource) this.resource = options.resource;
+
+  };
+
+  // Set up all inheritable **Odin.ResourceCollection** properties and methods.
+  _.extend(Resource.prototype, Backbone.Events, {
+    
+  });
+
+
+  // Helpers
+  // -------
+
   // Create a resource instance from JSON data.
   var createResourceFromJson = Odin.createResourceFromJson = function(data, resource, options) {
     options = _.extend({
@@ -595,9 +620,6 @@
     return d;
   };
 
-  // Helpers
-  // -------
-
   // Add a object to a class, if it has a contribute method use that.
   function addToObject(cls, name, value) {
     if (_.isFunction(value.contributeToObject)) {
@@ -617,13 +639,13 @@
       return _.isNull(value) || _.isUndefined(value) || value === '';
   };
 
-  // If an object contains a key return the value; else set the key to the default and return the default.
-  var setDefault = Odin.setDefault = function (obj, key, value) {
-    if (!_.has(obj, key)) {
-      obj[key] = value || null;
-    }
-    return obj[key];
-  };
+//  // If an object contains a key return the value; else set the key to the default and return the default.
+//  var setDefault = Odin.setDefault = function (obj, key, value) {
+//    if (!_.has(obj, key)) {
+//      obj[key] = value || null;
+//    }
+//    return obj[key];
+//  };
 
   return Odin;
 }));
