@@ -373,7 +373,7 @@
     this.parents = [];
     this.fields = [];
 
-    this.name = null;
+    this.name = undefined;
     this.namespace = undefined;
     this.verboseName = null;
     this.verboseNamePlural = null;
@@ -385,7 +385,6 @@
   _.extend(ResourceOptions.prototype, {
     contributeToObject: function (obj, name) {
       obj._meta = this;
-      this.name = name;
 
       if (this.metaOptions) {
         var keys = _.keys(this.metaOptions), unknownKeys = _.difference(keys, META_OPTION_NAMES);
@@ -397,6 +396,9 @@
         delete this.metaOptions;
       }
 
+      if (_.isUndefined(this.name)) {
+          throw new Error('Name not supplied.');
+      }
       if (_.isNull(this.verboseName)) {
         this.verboseName = this.name.replace('_', ' ').trim('_ ');
       }
@@ -522,7 +524,7 @@
   });
 
   // Custom version of extend that builds the internal meta object.
-  Resource.extend = function (name, fields, metaOptions, protoProps, staticProps) {
+  Resource.extend = function (fields, metaOptions, protoProps, staticProps) {
     var parent = this,
         baseMeta = _.has(parent, '_meta') ? parent._meta : null,
         NewResource = function(){ return parent.apply(this, arguments);};
@@ -544,7 +546,8 @@
     // later.
     NewResource.__super__ = parent.prototype;
 
-    addToObject(NewResource, name, new ResourceOptions(metaOptions));
+    // Add resource options (this will register itself as _meta)
+    addToObject(NewResource, null, new ResourceOptions(metaOptions));
 
     // Inherit namespace
     if (_.isUndefined(NewResource._meta.namespace) && baseMeta) {
