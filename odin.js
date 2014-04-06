@@ -41,7 +41,7 @@
   // Internal resource cache.
   var resourceTypeCache = {};
   Odin._addResource = function (resource) {
-    resourceTypeCache[resource._meta.getFullName()] = resource;
+    resourceTypeCache[resource.prototype._meta.getFullName()] = resource;
   };
   Odin._getResource = function (resourceName) {
     return resourceTypeCache[resourceName];
@@ -170,7 +170,7 @@
     contributeToObject: function (obj, name) {
       this.setAttributesFromName(name);
       this.resource = obj;
-      obj._meta.addField(this);
+      obj.prototype._meta.addField(this);
     },
 
     // Convert a value to a native JavaScript type.
@@ -330,7 +330,7 @@
   var ObjectAs = Odin.ObjectAs = function (resource, options) {
     this.resource = resource;
 
-    Field.prototype.constructor.call(this, options);
+    BaseField.prototype.constructor.call(this, options);
   };
 
   // Setup all inheritable **odin.ObjectAs** properties and methods.
@@ -361,6 +361,26 @@
     BaseField.prototype.constructor.call(this, options);
   };
 
+  // Set up all inheritable **odin.ArrayOf** properties and methods.
+  _.extend(Odin.ArrayOf.prototype, BaseField.prototype, {
+    // Convert a value to field type
+    toJavaScript: function (value) {
+      if (_.isArray(value)) {
+        return _.map(value, function (v) {
+          return createResourceFromJson(v, this.resource);
+        }, this);
+      } else {
+        return null;
+      }
+    },
+
+    // Prepare a value for insertion into a JSON structure.
+    toJSON: function (value) {
+      return _.map(value, function (v) {
+        return v.toJSON();
+      });
+    }
+  });
 
   // ResourceOptions
   // ---------------
@@ -384,7 +404,7 @@
   // Setup all inheritable **ResourceOptions** properties and methods.
   _.extend(ResourceOptions.prototype, {
     contributeToObject: function (obj) {
-      obj._meta = this;
+      obj.prototype._meta = this;
 
       if (this.metaOptions) {
         var keys = _.keys(this.metaOptions), unknownKeys = _.difference(keys, META_OPTION_NAMES);
@@ -405,10 +425,21 @@
       if (_.isNull(this.verboseNamePlural)) {
         this.verboseNamePlural = this.verboseName + 's';
       }
+
+      var parentMeta = obj.__super__._meta;
+      if (!_.isUndefined(parentMeta)) {
+        // Copy fields
+        this.fields = parentMeta.fields.slice(0);
+
+        if (_.isUndefined(this.namespace)) {
+          this.namespace = parentMeta.namespace;
+        }
+      }
     },
 
     addField: function (field) {
       this.fields.push(field);
+      this._fieldMap = undefined;
     },
 
     getFullName: function () {
@@ -416,6 +447,16 @@
         this._resourceName = (_.isUndefined(this.namespace) ? '' : this.namespace + '.') + this.name;
       }
       return this._resourceName;
+    },
+
+    getFieldByName: function (name) {
+      // Lazy generate a lookup map.
+      if (_.isUndefined(this._fieldMap)) {
+        var fieldMap = {};
+        _.map(this.fields, function (f) { fieldMap[f.name] = f; });
+        this._fieldMap = fieldMap;
+      }
+      return this._fieldMap[name];
     }
   });
 
@@ -446,10 +487,10 @@
     // Set a value on the resource
     set: function (attr, value, options) {
       var attrs, silent, changes;
-      if (name === null) return;
+      if (attr === null) return;
 
       // Handle both `"attr", value` and an object of multiple attr/value combinations.
-      if (_.isObject(name)) {
+      if (_.isObject(attr)) {
         attrs = attr;
         options = value;
       } else {
@@ -464,7 +505,7 @@
 
       // Set values on the resources
       foreach(attrs, function (value, attr) {
-        var field = this._meta.fields[attr];
+        var field = this._meta.getFieldByName(attr);
         if (_.isUndefined(field)) {
           throw new Error('Unknown field `' + attr + '`');
         }
@@ -526,7 +567,7 @@
   // Custom version of extend that builds the internal meta object.
   Resource.extend = function (fields, metaOptions, protoProps, staticProps) {
     var parent = this,
-        baseMeta = _.has(parent, '_meta') ? parent._meta : null,
+        baseMeta = _.has(parent, '_meta') ? parent.prototype._meta : null,
         NewResource = function(){ return parent.apply(this, arguments);};
 
     // Add static properties to the constructor function, if supplied.
@@ -549,17 +590,12 @@
     // Add resource options (this will register itself as _meta)
     addToObject(NewResource, null, new ResourceOptions(metaOptions));
 
-    // Inherit namespace
-    if (_.isUndefined(NewResource._meta.namespace) && baseMeta) {
-      NewResource._meta.namespace = baseMeta.namespace;
-    }
-
     // Register fields with the resource
     foreach(fields, function (field, name) {
       addToObject(NewResource, name, field);
     }, this);
 
-    if (!NewResource._meta.abstract) {
+    if (!NewResource.prototype._meta.abstract) {
       Odin._addResource(NewResource);
     }
 
@@ -587,10 +623,11 @@
   // Create a resource instance from JSON data.
   var createResourceFromJson = Odin.createResourceFromJson = function(data, resource, options) {
     options = _.extend({
-      fullClean: true
+      fullClean: true,
+      typeField: DEFAULT_TYPE_FIELD
     }, options || {});
 
-    var key = _.isUndefined(resource) ? DEFAULT_TYPE_FIELD : resource._meta.typeField,
+    var key = _.isUndefined(resource) ? options.typeField : resource.prototype._meta.typeField,
         resourceName = data[key],
         resourceType = Odin._getResource(resourceName);
     if (_.isUndefined(resourceType)) {
@@ -634,21 +671,17 @@
 
   // A foreach style method to return all fields on a resource
   var eachField = Odin.eachField = function (resource, iterator, context) {
-    return _.each(resource._meta.fields, iterator, context);
+    if (_.isFunction(resource)) {
+      return _.each(resource.prototype._meta.fields, iterator, context);
+    } else {
+      return _.each(resource._meta.fields, iterator, context);
+    }
   };
 
   // Returns true if the supplied value is "empty"
   var isEmpty = Odin.isEmpty = function (value) {
       return _.isNull(value) || _.isUndefined(value) || value === '';
   };
-
-//  // If an object contains a key return the value; else set the key to the default and return the default.
-//  var setDefault = Odin.setDefault = function (obj, key, value) {
-//    if (!_.has(obj, key)) {
-//      obj[key] = value || null;
-//    }
-//    return obj[key];
-//  };
 
   return Odin;
 }));
