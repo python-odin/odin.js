@@ -1,22 +1,22 @@
 (function () {
-  // Odin.Field
-  // ----------
+  // Odin.BaseField
+  // --------------
   test("hasDefault", function () {
-    var field = new Odin.Field({defaultValue: 123});
+    var field = new Odin.BaseField({defaultValue: 123});
 
     ok(field.hasDefault());
     equal(field.getDefault(), 123);
   });
 
   test("noDefault", function () {
-    var field = new Odin.Field();
+    var field = new Odin.BaseField();
 
     ok(!field.hasDefault());
     equal(field.getDefault(), null);
   });
 
   test("setAttributesFromName", function () {
-    var field = new Odin.Field();
+    var field = new Odin.BaseField();
 
     equal(field.name, null);
     field.setAttributesFromName('a_name');
@@ -27,7 +27,7 @@
   });
 
   test("setAttributesFromName name specified", function () {
-    var field = new Odin.Field({name: 'dave'});
+    var field = new Odin.BaseField({name: 'dave'});
 
     equal(field.name, 'dave');
     field.setAttributesFromName('a_name');
@@ -39,10 +39,10 @@
 
   test("clean null", function () {
     throws(function () {
-      (new Odin.Field()).clean(null);
+      (new Odin.BaseField()).clean(null);
     }, Odin.ValidationError, 'Not null');
 
-    equal((new Odin.Field({allowNull:true})).clean(null), null)
+    equal((new Odin.BaseField({allowNull:true})).clean(null), null)
 
   });
 
