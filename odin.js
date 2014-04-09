@@ -352,7 +352,7 @@
     this.resource = resource;
 
     options = _.extend({
-      defaultValue: function () { return []; }
+      defaultValue: function () { return new ResourceArray(); }
     }, options);
 
     BaseField.prototype.constructor.call(this, options);
