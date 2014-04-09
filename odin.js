@@ -25,9 +25,6 @@
   // Save the previous value of
   var previousOdin = root.Odin;
 
-  // Create local references to array methods we'll want to use later.
-  var foreach = _.each;
-
   // Current version of the library. Keep in sync with `package.json`.
   Odin.VERSION = '0.1.0';
 
@@ -182,7 +179,7 @@
       if (isEmpty(value)) return;
 
       var errors = [];
-      foreach(this.validators, function (validator) {
+      _.each(this.validators, function (validator) {
         try {
           validator(value);
         } catch (e) {
@@ -504,7 +501,7 @@
       changes = [];
 
       // Set values on the resources
-      foreach(attrs, function (value, attr) {
+      _.each(attrs, function (value, attr) {
         var field = this._meta.getFieldByName(attr);
         if (_.isUndefined(field)) {
           throw new Error('Unknown field `' + attr + '`');
@@ -591,7 +588,7 @@
     addToObject(NewResource, null, new ResourceOptions(metaOptions));
 
     // Register fields with the resource
-    foreach(fields, function (field, name) {
+    _.each(fields, function (field, name) {
       addToObject(NewResource, name, field);
     }, this);
 
@@ -613,18 +610,43 @@
 
   // Set up all inheritable **Odin.ResourceArray** properties and methods.
   _.extend(ResourceArray.prototype, Backbone.Events, {
+    // Add an element to the end of the array
     push: function (resource) {
-      // TODO: Event
       this.resources.push(resource);
+      this.trigger('insert', this, 0, resource);
     },
+    // Remove and return the last element at the end of the array
     pop: function () {
-      return this.resources.pop();
+      var resource = this.resources.pop();
+      this.trigger('remove', this, 0, resource);
+      return resource;
     },
+    // Insert a resource at an arbitrary point
+    insert: function (idx, resource) {
+      this.resources.splice(idx, 0, resource);
+      this.trigger('insert', this, idx, resource);
+    },
+    // Remove a resource at the idx
+    remove: function (idx) {
+      var resource = this.resources.splice(idx, 1)[0];
+      this.trigger('remove', this, 0, resource);
+    },
+    // Move a resource from one index to another.
+    move: function (from_idx, to_idx) {
+      var resource = this.resources.splice(from_idx, 1)[0];
+      this.resources.splice(to_idx, 0, resource);
+      this.trigger('move', this, from_idx, to_idx, resource);
+    },
+    // Get value at index
     at: function (idx) {
       return this.resources[idx];
     },
     each: function (iterator, context) {
-      foreach(this.resources, iterator, context);
+      _.each(this.resources, iterator, context);
+    },
+    // Size of array
+    size: function () {
+      return this.resources.length;
     }
   });
 
