@@ -335,7 +335,9 @@
     // Convert a value to a field type
     toJavaScript: function (value) {
       if (value === null || _.isUndefined(value)) return null;
-      return createResourceFromJson(value, this.resource);
+      if (value instanceof this.resource) return value;
+      if (_.isObject(value)) return createResourceFromJson(value, this.resource);
+      throw new ValidationError('Unknown value.'); // TODO: Decent error
     },
 
     // Prepare a value for insertion into a JSON structure
@@ -359,23 +361,22 @@
   };
 
   // Set up all inheritable **odin.ArrayOf** properties and methods.
-  _.extend(Odin.ArrayOf.prototype, BaseField.prototype, {
+  _.extend(Odin.ArrayOf.prototype, ObjectAs.prototype, {
     // Convert a value to field type
     toJavaScript: function (value) {
+      if (value === null || _.isUndefined(value)) return null;
+      if (value instanceof Odin.ResourceArray) return value;
       if (_.isArray(value)) {
-        return _.map(value, function (v) {
-          return createResourceFromJson(v, this.resource);
-        }, this);
-      } else {
-        return null;
+        return new Odin.ResourceArray(_.map(value, function (v) {
+          return ObjectAs.prototype.toJavaScript.call(this, v);
+        }, this));
       }
+      throw new ValidationError('Unknown value.'); // TODO: Decent error
     },
 
     // Prepare a value for insertion into a JSON structure.
     toJSON: function (value) {
-      return _.map(value, function (v) {
-        return v.toJSON();
-      });
+      return value.toJSON();
     }
   });
 
@@ -647,6 +648,11 @@
     // Size of array
     size: function () {
       return this.resources.length;
+    },
+    toJSON: function () {
+      return _.map(this.resources, function (r) {
+        return r.toJSON();
+      });
     }
   });
 
@@ -668,10 +674,21 @@
       throw new Error('Resource type `' + resourceName + '` not defined');
     }
 
-    var attrs = {};
-    eachField(resourceType, function (f) {
-      attrs[f.name] = f.valueFromObject(data);
-    });
+    var attrs = {}, errors = {}, fields = getFields(resourceType);
+    var i, f, v;
+    for (i in fields) {
+      f = fields[i];
+      v = f.valueFromObject(data);
+      try {
+        attrs[f.name] = f.toJavaScript(v);
+      } catch (e) {
+        if (e instanceof ValidationError) {
+          errors[f.name] = e.messages;
+        } else {
+          throw e;
+        }
+      }
+    }
 
     var newResource = new resourceType(attrs);
     if (options.fullClean) {
@@ -700,6 +717,14 @@
       value.contributeToObject(cls, name);
     } else {
       cls[name] = value;
+    }
+  }
+
+  function getFields(resource) {
+    if (_.isFunction(resource)) {
+      return resource.prototype._meta.fields;
+    } else {
+      return resource._meta.fields;
     }
   }
 
