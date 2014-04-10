@@ -1,3 +1,5 @@
 # Odin.js
 
 A Javascript implementation of the [Python Odin library](https://odin.readthedocs.org)
+
+[![Build Status](https://travis-ci.org/timsavage/odin.js.svg?branch=master)](https://travis-ci.org/timsavage/odin.js)
