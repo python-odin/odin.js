@@ -82,7 +82,7 @@
         if (value < minValue) {
           throw new ValidationError("", 'min_value', {'minValue': minValue});
         }
-      }
+      };
     },
 
     // MaxValueValidator
@@ -94,7 +94,7 @@
         if (value > maxValue) {
           throw new ValidationError("", 'max_value', {'maxValue': maxValue});
         }
-      }
+      };
     },
 
     // MinLengthValidator
@@ -106,7 +106,7 @@
         if (value.length < minLength) {
           throw new ValidationError("", 'min_length', {'minValue': minLength});
         }
-      }
+      };
     },
 
     // MaxValueValidator
@@ -118,7 +118,7 @@
         if (value.length > maxLength) {
           throw new ValidationError("", 'max_length', {'maxLength': maxLength});
         }
-      }
+      };
     }
   };
 
@@ -152,14 +152,14 @@
     },
 
     setAttributesFromName: function (attname) {
-      if (this.name == null) {
+      if (this.name === null) {
         this.name = attname;
       }
       this.attname = attname;
-      if (this.verboseName == null) {
+      if (this.verboseName === null) {
         this.verboseName = this.name.replace('_', ' ');
       }
-      if (this.verboseNamePlural == null) {
+      if (this.verboseNamePlural === null) {
         this.verboseNamePlural = this.verboseName + 's';
       }
     },
@@ -176,7 +176,9 @@
     },
 
     runValidators: function (value) {
-      if (isEmpty(value)) return;
+      if (isEmpty(value)) {
+        return;
+      }
 
       var errors = [];
       _.each(this.validators, function (validator) {
@@ -186,9 +188,9 @@
           if (e instanceof ValidationError) {
             if (_.has(e, 'code') && _.contains(this.errorMessages, e.code)) {
               var message = self.errorMessages[e.code];
-              errors.push(message)
+              errors.push(message);
             } else {
-              errors.push(e.messages)
+              errors.push(e.messages);
             }
           } else {
             throw e;
@@ -202,7 +204,7 @@
     },
 
     validate: function (value) {
-      if (this.choices != null && !isEmpty(value)) {
+      if (this.choices !== null && !isEmpty(value)) {
         if (_.any(this.choices, function (v){ return v[0] === value; })) {
           return;
         }
@@ -270,7 +272,7 @@
       }
 
       var len = value.length;
-      value = parseInt(value);
+      value = parseInt(value, 10);
       if (value === null && len > 0) {
         throw new ValidationError('Invalid integer value.')
       }
@@ -290,13 +292,15 @@
   _.extend(FloatField.prototype, BaseField.prototype, {
     // Convert a value to a field type
     toJavaScript: function (value) {
-      if (isEmpty(value)) return null;
+      if (isEmpty(value)) {
+        return null;
+      }
 
       // Ensure that float parsing doesn't silently return null.
       var length = value.length;
       value = parseFloat(value);
       if (value === null && length > 0) {
-        throw ValidationError("Invalid float value");
+        throw new ValidationError("Invalid float value");
       }
       return value;
     }
