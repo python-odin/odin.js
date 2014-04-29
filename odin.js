@@ -208,7 +208,7 @@
         if (_.any(this.choices, function (v){ return v[0] === value; })) {
           return;
         }
-        throw new ValidationError(this.errorMessages['invalid_choice']);
+        throw new ValidationError(this.errorMessages.invalid_choice);
       }
 
       if (value === null && !this.allowNull) {
@@ -499,7 +499,9 @@
     // Set a value on the resource
     set: function (attr, value, options) {
       var attrs, silent, changes;
-      if (attr === null) return;
+      if (attr === null) {
+        return;
+      }
 
       // Handle both `"attr", value` and an object of multiple attr/value combinations.
       if (_.isObject(attr)) {
@@ -581,7 +583,7 @@
   // Custom version of extend that builds the internal meta object.
   Resource.extend = function (fields, metaOptions, protoProps, staticProps) {
     var parent = this,
-        baseMeta = _.has(parent, '_meta') ? parent.prototype._meta : null,
+        //baseMeta = _.has(parent, '_meta') ? parent.prototype._meta : null,
         NewResource = function(){ return parent.apply(this, arguments);};
 
     // Add static properties to the constructor function, if supplied.
@@ -595,7 +597,9 @@
 
     // Add prototype properties (instance properties) to the subclass,
     // if supplied.
-    if (protoProps) _.extend(NewResource.prototype, protoProps);
+    if (protoProps) {
+      _.extend(NewResource.prototype, protoProps);
+    }
 
     // Set a convenience property in case the parent's prototype is needed
     // later.
@@ -621,7 +625,9 @@
 
   var ResourceArray = Odin.ResourceArray = function (resources, options) {
     options || (options = {});
-    if (options.resource) this.resource = options.resource;
+    if (options.resource) {
+      this.resource = options.resource;
+    }
     this.resources = resources || [];
   };
 
@@ -721,7 +727,7 @@
     }
 
     if (_.isObject(data)) {
-      return createResourceFromJson(data, resource)
+      return createResourceFromJson(data, resource);
     }
 
     return data;
