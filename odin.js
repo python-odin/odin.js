@@ -187,7 +187,7 @@
         } catch (e) {
           if (e instanceof ValidationError) {
             if (_.has(e, 'code') && _.contains(this.errorMessages, e.code)) {
-              var message = self.errorMessages[e.code];
+              var message = this.errorMessages[e.code];
               errors.push(message);
             } else {
               errors.push(e.messages);
@@ -211,7 +211,7 @@
         throw new ValidationError(this.errorMessages['invalid_choice']);
       }
 
-      if (value == null && !this.allowNull) {
+      if (value === null && !this.allowNull) {
         throw new ValidationError(this.errorMessages['null']);
       }
     },
@@ -274,7 +274,7 @@
       var len = value.length;
       value = parseInt(value, 10);
       if (value === null && len > 0) {
-        throw new ValidationError('Invalid integer value.')
+        throw new ValidationError('Invalid integer value.');
       }
       return value;
     }
@@ -338,9 +338,15 @@
   _.extend(ObjectAs.prototype, BaseField.prototype, {
     // Convert a value to a field type
     toJavaScript: function (value) {
-      if (value === null || _.isUndefined(value)) return null;
-      if (value instanceof this.resource) return value;
-      if (_.isObject(value)) return createResourceFromJson(value, this.resource);
+      if (value === null || _.isUndefined(value)) {
+        return null;
+      }
+      if (value instanceof this.resource) {
+        return value;
+      }
+      if (_.isObject(value)) {
+        return createResourceFromJson(value, this.resource);
+      }
       throw new ValidationError('Unknown value.'); // TODO: Decent error
     },
 
@@ -368,8 +374,12 @@
   _.extend(Odin.ArrayOf.prototype, ObjectAs.prototype, {
     // Convert a value to field type
     toJavaScript: function (value) {
-      if (value === null || _.isUndefined(value)) return null;
-      if (value instanceof Odin.ResourceArray) return value;
+      if (value === null || _.isUndefined(value)) {
+        return null;
+      }
+      if (value instanceof Odin.ResourceArray) {
+        return value;
+      }
       if (_.isArray(value)) {
         return new Odin.ResourceArray(_.map(value, function (v) {
           return ObjectAs.prototype.toJavaScript.call(this, v);
@@ -514,7 +524,9 @@
 
         // Validate and assign value and track changes
         value = field.clean(value);
-        if (this[attr] !== value) changes.push(attr);
+        if (this[attr] !== value) {
+          changes.push(attr);
+        }
         this[attr] = value;
       }, this);
 
@@ -579,7 +591,7 @@
     // `parent`'s constructor function.
     var Surrogate = function(){ this.constructor = NewResource; };
     Surrogate.prototype = parent.prototype;
-    NewResource.prototype = new Surrogate;
+    NewResource.prototype = new Surrogate();
 
     // Add prototype properties (instance properties) to the subclass,
     // if supplied.
@@ -712,7 +724,7 @@
       return createResourceFromJson(data, resource)
     }
 
-    return d;
+    return data;
   };
 
   // Add a object to a class, if it has a contribute method use that.
