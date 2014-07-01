@@ -82,7 +82,7 @@
         if (value < minValue) {
           throw new ValidationError("", 'min_value', {'minValue': minValue});
         }
-      }
+      };
     },
 
     // MaxValueValidator
@@ -94,7 +94,7 @@
         if (value > maxValue) {
           throw new ValidationError("", 'max_value', {'maxValue': maxValue});
         }
-      }
+      };
     },
 
     // MinLengthValidator
@@ -106,7 +106,7 @@
         if (value.length < minLength) {
           throw new ValidationError("", 'min_length', {'minValue': minLength});
         }
-      }
+      };
     },
 
     // MaxValueValidator
@@ -118,7 +118,7 @@
         if (value.length > maxLength) {
           throw new ValidationError("", 'max_length', {'maxLength': maxLength});
         }
-      }
+      };
     }
   };
 
@@ -152,14 +152,14 @@
     },
 
     setAttributesFromName: function (attname) {
-      if (this.name == null) {
+      if (this.name === null) {
         this.name = attname;
       }
       this.attname = attname;
-      if (this.verboseName == null) {
+      if (this.verboseName === null) {
         this.verboseName = this.name.replace('_', ' ');
       }
-      if (this.verboseNamePlural == null) {
+      if (this.verboseNamePlural === null) {
         this.verboseNamePlural = this.verboseName + 's';
       }
     },
@@ -176,7 +176,9 @@
     },
 
     runValidators: function (value) {
-      if (isEmpty(value)) return;
+      if (isEmpty(value)) {
+        return;
+      }
 
       var errors = [];
       _.each(this.validators, function (validator) {
@@ -185,10 +187,10 @@
         } catch (e) {
           if (e instanceof ValidationError) {
             if (_.has(e, 'code') && _.contains(this.errorMessages, e.code)) {
-              var message = self.errorMessages[e.code];
-              errors.push(message)
+              var message = this.errorMessages[e.code];
+              errors.push(message);
             } else {
-              errors.push(e.messages)
+              errors.push(e.messages);
             }
           } else {
             throw e;
@@ -210,14 +212,14 @@
 
     validate: function (value) {
       var choices = this.getChoices();
-      if (choices != null && !isEmpty(value)) {
+      if (choices !== null && !isEmpty(value)) {
         if (_.any(choices, function (v){ return v[0] === value; })) {
           return;
         }
-        throw new ValidationError(this.errorMessages['invalid_choice']);
+        throw new ValidationError(this.errorMessages.invalid_choice);
       }
 
-      if (value == null && !this.allowNull) {
+      if (value === null && !this.allowNull) {
         throw new ValidationError(this.errorMessages['null']);
       }
     },
@@ -278,9 +280,9 @@
       }
 
       var len = value.length;
-      value = parseInt(value);
-      if (isNaN(value) || (value === null && len > 0)) {
-        throw new ValidationError('Invalid integer value.')
+      value = parseInt(value, 10);
+      if (isNaN(value) || value === null && len > 0) {
+        throw new ValidationError('Invalid integer value.');
       }
       return value;
     }
@@ -298,13 +300,15 @@
   _.extend(FloatField.prototype, BaseField.prototype, {
     // Convert a value to a field type
     toJavaScript: function (value) {
-      if (isEmpty(value)) return null;
+      if (isEmpty(value)) {
+        return null;
+      }
 
       // Ensure that float parsing doesn't silently return null.
       var length = value.length;
       value = parseFloat(value);
       if (value === null && length > 0) {
-        throw ValidationError("Invalid float value");
+        throw new ValidationError("Invalid float value");
       }
       return value;
     }
@@ -342,9 +346,15 @@
   _.extend(ObjectAs.prototype, BaseField.prototype, {
     // Convert a value to a field type
     toJavaScript: function (value) {
-      if (value === null || _.isUndefined(value)) return null;
-      if (value instanceof this.resource) return value;
-      if (_.isObject(value)) return createResourceFromJson(value, this.resource);
+      if (value === null || _.isUndefined(value)) {
+        return null;
+      }
+      if (value instanceof this.resource) {
+        return value;
+      }
+      if (_.isObject(value)) {
+        return createResourceFromJson(value, this.resource);
+      }
       throw new ValidationError('Unknown value.'); // TODO: Decent error
     },
 
@@ -372,8 +382,12 @@
   _.extend(Odin.ArrayOf.prototype, ObjectAs.prototype, {
     // Convert a value to field type
     toJavaScript: function (value) {
-      if (value === null || _.isUndefined(value)) return null;
-      if (value instanceof Odin.ResourceArray) return value;
+      if (value === null || _.isUndefined(value)) {
+        return null;
+      }
+      if (value instanceof Odin.ResourceArray) {
+        return value;
+      }
       if (_.isArray(value)) {
         return new Odin.ResourceArray(_.map(value, function (v) {
           return ObjectAs.prototype.toJavaScript.call(this, v);
@@ -493,7 +507,9 @@
     // Set a value on the resource
     set: function (attr, value, options) {
       var attrs, silent, changes;
-      if (attr === null) return;
+      if (attr === null) {
+        return;
+      }
 
       // Handle both `"attr", value` and an object of multiple attr/value combinations.
       if (_.isObject(attr)) {
@@ -518,7 +534,9 @@
 
         // Validate and assign value and track changes
         value = field.clean(value);
-        if (this[attr] !== value) changes.push(attr);
+        if (this[attr] !== value) {
+          changes.push(attr);
+        }
         this[attr] = value;
       }, this);
 
@@ -573,7 +591,7 @@
   // Custom version of extend that builds the internal meta object.
   Resource.extend = function (fields, metaOptions, protoProps, staticProps) {
     var parent = this,
-        baseMeta = _.has(parent, '_meta') ? parent.prototype._meta : null,
+        //baseMeta = _.has(parent, '_meta') ? parent.prototype._meta : null,
         NewResource = function(){ return parent.apply(this, arguments);};
 
     // Add static properties to the constructor function, if supplied.
@@ -583,11 +601,13 @@
     // `parent`'s constructor function.
     var Surrogate = function(){ this.constructor = NewResource; };
     Surrogate.prototype = parent.prototype;
-    NewResource.prototype = new Surrogate;
+    NewResource.prototype = new Surrogate();
 
     // Add prototype properties (instance properties) to the subclass,
     // if supplied.
-    if (protoProps) _.extend(NewResource.prototype, protoProps);
+    if (protoProps) {
+      _.extend(NewResource.prototype, protoProps);
+    }
 
     // Set a convenience property in case the parent's prototype is needed
     // later.
@@ -613,7 +633,9 @@
 
   var ResourceArray = Odin.ResourceArray = function (resources, options) {
     options || (options = {});
-    if (options.resource) this.resource = options.resource;
+    if (options.resource) {
+      this.resource = options.resource;
+    }
     this.resources = resources || [];
   };
 
@@ -713,10 +735,10 @@
     }
 
     if (_.isObject(data)) {
-      return createResourceFromJson(data, resource)
+      return createResourceFromJson(data, resource);
     }
 
-    return d;
+    return data;
   };
 
   // Add a object to a class, if it has a contribute method use that.
