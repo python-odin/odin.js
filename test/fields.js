@@ -68,17 +68,15 @@
     strictEqual(field.clean(""), null);
   });
 
-  test("Odin.IntegerField - validators", function () {
-    var field = new Odin.IntegerField({minValue: 10, maxValue: 20});
-
-    field.validators =
-
-    strictEqual(field.clean(1), 1);
-    strictEqual(field.clean('1'), 1);
-    strictEqual(field.clean(null), null);
-    throws(function () { field.clean("abc")}, Odin.ValidationError);
-    strictEqual(field.clean(""), null);
-  });
+//  test("Odin.IntegerField - validators", function () {
+//    var field = new Odin.IntegerField({minValue: 10, maxValue: 20});
+//
+//    strictEqual(field.clean(1), 1);
+//    strictEqual(field.clean('1'), 1);
+//    strictEqual(field.clean(null), null);
+//    throws(function () { field.clean("abc")}, Odin.ValidationError);
+//    strictEqual(field.clean(""), null);
+//  });
 
   // Odin.StringField
   // ----------------
