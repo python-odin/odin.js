@@ -1,6 +1,6 @@
 {
   "name": "odin.js",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Javascript implimentation of the Python Odin library",
   "main": "odin.js",
   "license": "BSD",
