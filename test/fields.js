@@ -1,21 +1,21 @@
 (function () {
   // Odin.BaseField
   // --------------
-  test("hasDefault", function () {
+  test("Odin.BaseField - hasDefault", function () {
     var field = new Odin.BaseField({defaultValue: 123});
 
     ok(field.hasDefault());
     equal(field.getDefault(), 123);
   });
 
-  test("noDefault", function () {
+  test("Odin.BaseField - noDefault", function () {
     var field = new Odin.BaseField();
 
     ok(!field.hasDefault());
     equal(field.getDefault(), null);
   });
 
-  test("setAttributesFromName", function () {
+  test("Odin.BaseField - setAttributesFromName", function () {
     var field = new Odin.BaseField();
 
     equal(field.name, null);
@@ -26,7 +26,7 @@
     equal(field.verboseNamePlural, 'a names');
   });
 
-  test("setAttributesFromName name specified", function () {
+  test("Odin.BaseField - setAttributesFromName name specified", function () {
     var field = new Odin.BaseField({name: 'dave'});
 
     equal(field.name, 'dave');
@@ -37,7 +37,7 @@
     equal(field.verboseNamePlural, 'daves');
   });
 
-  test("clean null", function () {
+  test("Odin.BaseField - clean null", function () {
     throws(function () {
       (new Odin.BaseField()).clean(null);
     }, Odin.ValidationError, 'Not null');
@@ -48,6 +48,37 @@
 
   // Odin.IntegerField
   // -----------------
+  test("Odin.IntegerField - default", function () {
+    var field = new Odin.IntegerField();
+
+    strictEqual(field.clean(1), 1);
+    strictEqual(field.clean('1'), 1);
+    throws(function () { field.clean(null)}, Odin.ValidationError);
+    throws(function () { field.clean("abc")}, Odin.ValidationError);
+    throws(function () { field.clean("")}, Odin.ValidationError);
+  });
+
+  test("Odin.IntegerField - allow null", function () {
+    var field = new Odin.IntegerField({allowNull: true});
+
+    strictEqual(field.clean(1), 1);
+    strictEqual(field.clean('1'), 1);
+    strictEqual(field.clean(null), null);
+    throws(function () { field.clean("abc")}, Odin.ValidationError);
+    strictEqual(field.clean(""), null);
+  });
+
+  test("Odin.IntegerField - validators", function () {
+    var field = new Odin.IntegerField({minValue: 10, maxValue: 20});
+
+    field.validators =
+
+    strictEqual(field.clean(1), 1);
+    strictEqual(field.clean('1'), 1);
+    strictEqual(field.clean(null), null);
+    throws(function () { field.clean("abc")}, Odin.ValidationError);
+    strictEqual(field.clean(""), null);
+  });
 
   // Odin.StringField
   // ----------------
