@@ -201,9 +201,17 @@
       }
     },
 
+    getChoices: function () {
+      if (_.isFunction(this.choices)) {
+        return this.choices();
+      }
+      return this.choices;
+    },
+
     validate: function (value) {
-      if (this.choices != null && !isEmpty(value)) {
-        if (_.any(this.choices, function (v){ return v[0] === value; })) {
+      var choices = this.getChoices();
+      if (choices != null && !isEmpty(value)) {
+        if (_.any(choices, function (v){ return v[0] === value; })) {
           return;
         }
         throw new ValidationError(this.errorMessages['invalid_choice']);
@@ -271,7 +279,7 @@
 
       var len = value.length;
       value = parseInt(value);
-      if (value === null && len > 0) {
+      if (isNaN(value) || (value === null && len > 0)) {
         throw new ValidationError('Invalid integer value.')
       }
       return value;
