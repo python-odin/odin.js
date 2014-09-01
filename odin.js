@@ -250,6 +250,28 @@
     }
   });
 
+  // Odin.BooleanField
+  // -----------------
+
+  Odin.BooleanField = function (options) {
+    BaseField.prototype.constructor.call(this, options);
+  };
+
+  // Setup all inheritable **Odin.BooleanField** properties and methods.
+  _.extend(Odin.BooleanField.prototype, BaseField.prototype, {
+    toJavaScript: function (value) {
+      if (isEmpty(value)) {
+        return null;
+      }
+
+      value = Boolean(value);
+      if (value === null) {
+        throw new ValidationError('Invalid boolean value.')
+      }
+      return value;
+    }
+  });
+
   // Odin.IntegerField
   // -----------------
 
@@ -345,7 +367,11 @@
         return value;
       }
       if (_.isObject(value)) {
-        return createResourceFromJson(value, this.resource);
+        if (_.isUndefined(value._meta)) {
+          return createResourceFromJson(value, this.resource);
+        } else {
+          return value;
+      }
       }
       throw new ValidationError('Unknown value.'); // TODO: Decent error
     },
