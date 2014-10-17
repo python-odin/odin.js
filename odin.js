@@ -3,14 +3,14 @@
 (function(root, factory) {
   // Set up Odin appropriately for the environment. Start with AMD.
   if (typeof define === 'function' && define.amd) {
-    define(['backbone', 'underscore', 'exports'], function(Backbone, _, exports) {
+    define(['backbone', 'lodash', 'exports'], function(Backbone, _, exports) {
       root.Odin = factory(root, exports, Backbone, _);
     });
 
   // Next for Node.js or CommonJS.
   } else if (typeof exports !== 'undefined') {
     var Backbone = require('backbone'),
-        _ = require('underscore');
+        _ = require('lodash');
     factory(root, exports, Backbone, _);
 
   // Finally, as a browser global.
@@ -249,7 +249,7 @@
 
     // Returns the value of this field in the given resource instance.
     valueFromObject: function (obj) {
-      return _.has(obj, this.name) ? obj[this.name] : undefined;
+      return _.has(obj, this.attname) ? obj[this.attname] : undefined;
     },
 
     // Prepare value for use in JSON format.
@@ -315,7 +315,7 @@
 
   // Field that represents a integer.
   var FloatField = Odin.FloatField = function (options) {
-    BaseField.prototype.constructor.call(options);
+    BaseField.prototype.constructor.call(this, options);
   };
 
   // Setup all inheritable **odin.ObjectAs** properties and methods.
@@ -583,10 +583,10 @@
       eachField(this, function (field) {
         var value = field.valueFromObject(this);
         try {
-          this[field.name] = field.clean(value);
+          this[field.attname] = field.clean(value);
         } catch (e) {
           if (e instanceof ValidationError) {
-            errors[field.name] = e.messages;
+            errors[field.attname] = e.messages;
           } else {
             throw e;
           }
@@ -615,7 +615,7 @@
   });
 
   // Custom version of extend that builds the internal meta object.
-  Resource.extend = function (fields, metaOptions, protoProps, staticProps) {
+  Resource.extend = function (metaOptions, fields, protoProps, staticProps) {
     var parent = this,
         //baseMeta = _.has(parent, '_meta') ? parent.prototype._meta : null,
         NewResource = function(){ return parent.apply(this, arguments);};
@@ -800,3 +800,4 @@
 
   return Odin;
 }));
+
