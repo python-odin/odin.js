@@ -25,6 +25,10 @@
   // Save the previous value of
   var previousOdin = root.Odin;
 
+  // Create local references to array methods we’ll want to use later.
+  var array = [],
+    slice = array.slice;
+
   // Current version of the library. Keep in sync with `package.json`.
   Odin.VERSION = '0.1.0';
 
@@ -663,6 +667,11 @@
       this.resource = options.resource;
     }
     this.resources = resources || [];
+
+    var self = this;
+    Object.defineProperty(this, 'length', {
+      get: function () { return self.resources.length; }
+    })
   };
 
   // Set up all inheritable **Odin.ResourceArray** properties and methods.
@@ -670,12 +679,12 @@
     // Add an element to the end of the array
     push: function (resource) {
       this.resources.push(resource);
-      this.trigger('insert', this, 0, resource);
+      this.trigger('insert', this, this.resources.length - 1, resource);
     },
     // Remove and return the last element at the end of the array
     pop: function () {
       var resource = this.resources.pop();
-      this.trigger('remove', this, 0, resource);
+      this.trigger('remove', this, this.resources.length, resource);
       return resource;
     },
     // Insert a resource at an arbitrary point
@@ -686,7 +695,7 @@
     // Remove a resource at the idx
     remove: function (idx) {
       var resource = this.resources.splice(idx, 1)[0];
-      this.trigger('remove', this, 0, resource);
+      this.trigger('remove', this, idx, resource);
     },
     // Move a resource from one index to another.
     move: function (from_idx, to_idx) {
@@ -698,13 +707,6 @@
     at: function (idx) {
       return this.resources[idx];
     },
-    each: function (iterator, context) {
-      _.each(this.resources, iterator, context);
-    },
-    // Size of array
-    size: function () {
-      return this.resources.length;
-    },
     toJSON: function () {
       return _.map(this.resources, function (r) {
         return r.toJSON();
@@ -712,6 +714,20 @@
     }
   });
 
+  var methods = ['forEach', 'each', 'map', 'collect', 'reduce', 'foldl',
+    'inject', 'reduceRight', 'foldr', 'find', 'detect', 'filter', 'select',
+    'reject', 'every', 'all', 'some', 'any', 'include', 'contains', 'invoke',
+    'max', 'min', 'toArray', 'size', 'first', 'head', 'take', 'initial', 'rest',
+    'tail', 'drop', 'last', 'without', 'difference', 'indexOf', 'shuffle',
+    'lastIndexOf', 'isEmpty', 'chain', 'sample', 'findIndex'];
+
+  _.each(methods, function(method) {
+    ResourceArray.prototype[method] = function() {
+      var args = slice.call(arguments);
+      args.unshift(this.resources);
+      return _[method].apply(_, args);
+    };
+  });
 
   // Helpers
   // -------
@@ -800,4 +816,3 @@
 
   return Odin;
 }));
-
