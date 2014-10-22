@@ -71,6 +71,16 @@
     }
   };
   ValidationError.prototype = new Error();
+  ValidationError.prototype.toString = function () {
+    if (typeof this.messageObject !== 'undefined') {
+      return _.reduce(this.messageObject, function (result, field, msg) {
+        result += field + ": " + msg.toString() + "\n";
+        return result;
+      });
+    } else {
+      return this.messages.toString()
+    }
+  };
   ValidationError.constructor = ValidationError;
 
 
@@ -760,6 +770,10 @@
           throw e;
         }
       }
+    }
+
+    if (!_.isEmpty(errors)) {
+      throw new ValidationError(errors);
     }
 
     var newResource = new resourceType(attrs);
