@@ -687,31 +687,46 @@
   // Set up all inheritable **Odin.ResourceArray** properties and methods.
   _.extend(ResourceArray.prototype, Backbone.Events, {
     // Add an element to the end of the array
-    push: function (resource) {
+    push: function (resource, options) {
+      options || (options = {});
       this.resources.push(resource);
-      this.trigger('insert', this, this.resources.length - 1, resource);
+      if (!options.silent) {
+        this.trigger('insert', this, this.resources.length - 1, resource, options);
+      }
     },
     // Remove and return the last element at the end of the array
-    pop: function () {
+    pop: function (options) {
+      options || (options = {});
       var resource = this.resources.pop();
-      this.trigger('remove', this, this.resources.length, resource);
+      if (!options.silent) {
+        this.trigger('remove', this, this.resources.length, resource, options);
+      }
       return resource;
     },
     // Insert a resource at an arbitrary point
-    insert: function (idx, resource) {
+    insert: function (idx, resource, options) {
+      options || (options = {});
       this.resources.splice(idx, 0, resource);
-      this.trigger('insert', this, idx, resource);
+      if (!options.silent) {
+        this.trigger('insert', this, idx, resource, options);
+      }
     },
     // Remove a resource at the idx
-    remove: function (idx) {
+    remove: function (idx, options) {
+      options || (options = {});
       var resource = this.resources.splice(idx, 1)[0];
-      this.trigger('remove', this, idx, resource);
+      if (!options.silent) {
+        this.trigger('remove', this, idx, resource, options);
+      }
     },
     // Move a resource from one index to another.
-    move: function (from_idx, to_idx) {
+    move: function (from_idx, to_idx, options) {
+      options || (options = {});
       var resource = this.resources.splice(from_idx, 1)[0];
       this.resources.splice(to_idx, 0, resource);
-      this.trigger('move', this, from_idx, to_idx, resource);
+      if (!options.silent) {
+        this.trigger('move', this, from_idx, to_idx, resource, options);
+      }
     },
     // Get value at index
     at: function (idx) {

@@ -1,34 +1,34 @@
 (function () {
   var LibraryBase = Odin.Resource.extend(
-      // Fields
-      {},
-      // Meta
-      {
-        name: 'LibraryBase',
-        abstract: true,
-        namespace: 'test.library'
-      }
+    // Meta
+    {
+      name: 'LibraryBase',
+      abstract: true,
+      namespace: 'test.library'
+    },
+    // Fields
+    {}
   );
 
   var Library = LibraryBase.extend(
-      // Fields
-      {
-        name: new Odin.StringField,
-        size: new Odin.IntegerField
-      },
-      // Meta
-      {
-        name: 'Library'
-      }
+    // Meta
+    {
+      name: 'Library'
+    },
+    // Fields
+    {
+      name: new Odin.StringField,
+      size: new Odin.IntegerField
+    }
   );
 
   var Book = LibraryBase.extend(
-      // Fields
-      {},
-      // Meta
-      {
-        name: 'Book'
-      }
+    // Meta
+    {
+      name: 'Book'
+    },
+    // Fields
+    {}
   );
 
   //test()
