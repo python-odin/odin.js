@@ -343,7 +343,7 @@
       // Ensure that float parsing doesn't silently return null.
       var length = value.length;
       value = parseFloat(value);
-      if (value === null && length > 0) {
+      if ((value === null || _.isNaN(value)) && length > 0) {
         throw new ValidationError("Invalid float value");
       }
       return value;
