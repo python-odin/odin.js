@@ -721,6 +721,7 @@
     },
     // Move a resource from one index to another.
     move: function (from_idx, to_idx, options) {
+      if (from_idx === to_idx) return;
       options || (options = {});
       var resource = this.resources.splice(from_idx, 1)[0];
       this.resources.splice(to_idx, 0, resource);

@@ -33,5 +33,11 @@
     a.move(2, 0);
     equal(a.size(), 3);
     deepEqual(a.resources, ['eek', 'foo', 'bar']);
+
+    a.push('ohh');
+    a.push('ahh');
+    equal(a.size(), 5);
+    a.move(1, 3);
+    deepEqual(a.resources, ['eek', 'bar', 'ohh', 'foo', 'ahh']);
   });
 }());
