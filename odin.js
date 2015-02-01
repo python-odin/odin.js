@@ -27,7 +27,8 @@
 
   // Create local references to array methods we’ll want to use later.
   var array = [],
-    slice = array.slice;
+    slice = array.slice,
+    splice = array.splice;
 
   // Current version of the library. Keep in sync with `package.json`.
   Odin.VERSION = '0.1.0';
@@ -691,7 +692,7 @@
       options || (options = {});
       this.resources.push(resource);
       if (!options.silent) {
-        this.trigger('insert', this, this.resources.length - 1, resource, options);
+        this.trigger('insert', this, this.resources.length - 1, [resource], options);
       }
     },
     // Remove and return the last element at the end of the array
@@ -699,14 +700,21 @@
       options || (options = {});
       var resource = this.resources.pop();
       if (!options.silent) {
-        this.trigger('remove', this, this.resources.length, resource, options);
+        this.trigger('remove', this, this.resources.length, [resource], options);
       }
       return resource;
     },
-    // Insert a resource at an arbitrary point
+    // Insert a resource(s) at an arbitrary point
     insert: function (idx, resource, options) {
       options || (options = {});
-      this.resources.splice(idx, 0, resource);
+      if (resource instanceof Odin.ResourceArray) {
+        resource = resource.resources;
+      } else if (resource instanceof Array) {
+        // Ignore
+      } else {
+        resource = [resource];
+      }
+      splice.apply(this.resources, [idx, 0].concat(resource));
       if (!options.silent) {
         this.trigger('insert', this, idx, resource, options);
       }
@@ -714,16 +722,33 @@
     // Remove a resource at the idx
     remove: function (idx, options) {
       options || (options = {});
-      var resource = this.resources.splice(idx, 1)[0];
+      var resource = this.resources.splice(idx, 1);
       if (!options.silent) {
         this.trigger('remove', this, idx, resource, options);
+      }
+    },
+    // Replace a resource at the idx
+    replace: function (idx, resource, options) {
+      options || (options = {});
+      if (resource instanceof Odin.ResourceArray) {
+        resource = resource.resources;
+      } else if (resource instanceof Array) {
+        // Ignore
+      } else {
+        resource = [resource];
+      }
+      var oldResource = splice.apply(this.resources, [idx, 1].concat(resource));
+
+      if (!options.silent) {
+        this.trigger('remove', this, idx, oldResource, options);
+        this.trigger('insert', this, idx, resource, options);
       }
     },
     // Move a resource from one index to another.
     move: function (from_idx, to_idx, options) {
       if (from_idx === to_idx) return;
       options || (options = {});
-      var resource = this.resources.splice(from_idx, 1)[0];
+      var resource = this.resources.splice(from_idx, 1);
       this.resources.splice(to_idx, 0, resource);
       if (!options.silent) {
         this.trigger('move', this, from_idx, to_idx, resource, options);
