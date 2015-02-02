@@ -704,45 +704,40 @@
       }
       return resource;
     },
-    // Insert a resource(s) at an arbitrary point
-    insert: function (idx, resource, options) {
+    // Splice in additional resources
+    splice: function (start, deleteCount, resources, options) {
       options || (options = {});
-      if (resource instanceof Odin.ResourceArray) {
-        resource = resource.resources;
-      } else if (resource instanceof Array) {
+
+      // Get resources Array into a consistent type
+      if (typeof resources === 'undefined') {
+        resources = []
+      } else if (resources instanceof Odin.ResourceArray) {
+        // Unpack ResourceArray
+        resources = resources.resources;
+      } else if (resources instanceof Array) {
         // Ignore
       } else {
-        resource = [resource];
+        // Generate an array of resources.
+        resources = [resources];
       }
-      splice.apply(this.resources, [idx, 0].concat(resource));
+
+      var removed = splice.apply(this.resources, [start, deleteCount].concat(resources));
       if (!options.silent) {
-        this.trigger('insert', this, idx, resource, options);
+        if (removed.length) this.trigger('remove', this, start, removed, options);
+        if (resources.length) this.trigger('insert', this, start, resources, options);
       }
+    },
+    // Insert a resource(s) at an arbitrary point
+    insert: function (idx, resource, options) {
+      this.splice(idx, 0, resource, options);
     },
     // Remove a resource at the idx
     remove: function (idx, options) {
-      options || (options = {});
-      var resource = this.resources.splice(idx, 1);
-      if (!options.silent) {
-        this.trigger('remove', this, idx, resource, options);
-      }
+      this.splice(idx, 1, [], options);
     },
     // Replace a resource at the idx
     replace: function (idx, resource, options) {
-      options || (options = {});
-      if (resource instanceof Odin.ResourceArray) {
-        resource = resource.resources;
-      } else if (resource instanceof Array) {
-        // Ignore
-      } else {
-        resource = [resource];
-      }
-      var oldResource = splice.apply(this.resources, [idx, 1].concat(resource));
-
-      if (!options.silent) {
-        this.trigger('remove', this, idx, oldResource, options);
-        this.trigger('insert', this, idx, resource, options);
-      }
+      this.splice(idx, 1, resource, options);
     },
     // Move a resource from one index to another.
     move: function (from_idx, to_idx, options) {
