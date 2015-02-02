@@ -15,7 +15,7 @@
     "backbone": "~1.1.2"
   },
   "devDependencies": {
-    "phantomjs": "1.9.7-1",
+    "phantomjs": "^1.9.8",
     "uglifyjs": "^2.3.6"
   },
   "repository": {
