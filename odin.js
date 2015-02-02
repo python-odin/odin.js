@@ -744,7 +744,7 @@
       if (from_idx === to_idx) return;
       options || (options = {});
       var resource = this.resources.splice(from_idx, 1);
-      this.resources.splice(to_idx, 0, resource);
+      this.splice(to_idx, 0, resource, options);
       if (!options.silent) {
         this.trigger('move', this, from_idx, to_idx, resource, options);
       }
