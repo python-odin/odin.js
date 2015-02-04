@@ -727,6 +727,10 @@
         if (resources.length) this.trigger('insert', this, start, resources, options);
       }
     },
+    // Append a resource(s) to the end (this varies from push in that it can handle multiple resources)
+    append: function (resource, options) {
+      this.splice(this.resources.length, 0, resource, options);
+    },
     // Insert a resource(s) at an arbitrary point
     insert: function (idx, resource, options) {
       this.splice(idx, 0, resource, options);
