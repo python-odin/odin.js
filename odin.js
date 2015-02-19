@@ -695,6 +695,7 @@
         this.trigger('insert', this, this.resources.length - 1, [resource], options);
       }
     },
+
     // Remove and return the last element at the end of the array
     pop: function (options) {
       options || (options = {});
@@ -704,6 +705,7 @@
       }
       return resource;
     },
+
     // Splice in additional resources
     splice: function (start, deleteCount, resources, options) {
       options || (options = {});
@@ -727,22 +729,40 @@
         if (resources.length) this.trigger('insert', this, start, resources, options);
       }
     },
+
+    // Return resources with matching attributes. Useful for simple cases of filter.
+    where: function (attrs, first) {
+      var matches = _.matches(attrs);
+      return this[first ? 'find' : 'filter'](function (resource) {
+        return matches(resource);
+      });
+    },
+
+    // Return the first resource with matching attributes. Useful for simples cases of find.
+    findWhere: function (attrs) {
+      return this.where(attrs, true)
+    },
+
     // Append a resource(s) to the end (this varies from push in that it can handle multiple resources)
     append: function (resource, options) {
       this.splice(this.resources.length, 0, resource, options);
     },
+
     // Insert a resource(s) at an arbitrary point
     insert: function (idx, resource, options) {
       this.splice(idx, 0, resource, options);
     },
+
     // Remove a resource at the idx
     remove: function (idx, options) {
       this.splice(idx, 1, [], options);
     },
+
     // Replace a resource at the idx
     replace: function (idx, resource, options) {
       this.splice(idx, 1, resource, options);
     },
+
     // Move a resource from one index to another.
     move: function (from_idx, to_idx, options) {
       if (from_idx === to_idx) return;
@@ -753,10 +773,12 @@
         this.trigger('move', this, from_idx, to_idx, resource, options);
       }
     },
+
     // Get value at index
     at: function (idx) {
       return this.resources[idx];
     },
+
     toJSON: function () {
       return _.map(this.resources, function (r) {
         return r.toJSON();
