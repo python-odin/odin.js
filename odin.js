@@ -366,8 +366,17 @@
   };
 
   // Setup all inheritable **Odin.StringField** properties and methods.
-  _.extend(Odin.StringField.prototype, BaseField.prototype, {
-  });
+  _.extend(Odin.StringField.prototype, BaseField.prototype, {});
+
+  // Odin.DictField
+  // --------------
+
+  Odin.DictField = function (options) {
+    BaseField.prototype.constructor.call(this, options);
+  };
+
+  // Setup all inheritable **Odin.DictField** properties and methods.
+  _.extend(Odin.DictField.prototype, BaseField.prototype, {});
 
   // Odin.ObjectAs field
   // -------------------
