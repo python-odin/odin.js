@@ -82,6 +82,13 @@
       return this.messages.toString()
     }
   };
+  ValidationError.prototype.errorMessages = function () {
+    if (typeof this.messageObject !== 'undefined') {
+      return this.messageObject;
+    } else {
+      return this.messages;
+    }
+  };
   ValidationError.constructor = ValidationError;
 
 
@@ -155,6 +162,7 @@
       errorMessages: {}
     }, options);
 
+    _.extend(this.errorMessages, this.defaultErrorMessages, this.errorMessages);
     this.creationCounter = fieldCreationCounter++;
   };
 
@@ -205,7 +213,7 @@
               var message = this.errorMessages[e.code];
               errors.push(message);
             } else {
-              errors.push(e.messages);
+              errors.push(e.errorMessages());
             }
           } else {
             throw e;
@@ -836,7 +844,7 @@
         attrs[f.name] = f.toJavaScript(v);
       } catch (e) {
         if (e instanceof ValidationError) {
-          errors[f.name] = e.messages;
+          errors[f.name] = e.errorMessages();
         } else {
           throw e;
         }
