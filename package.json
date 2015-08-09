@@ -12,7 +12,8 @@
     "backbone"
   ],
   "dependencies": {
-    "backbone": "~1.1.2"
+    "backbone": "~1.1.2",
+    "lodash": "^3.10.1"
   },
   "devDependencies": {
     "phantomjs": "^1.9.8",
