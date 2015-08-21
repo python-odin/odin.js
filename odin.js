@@ -717,7 +717,7 @@
     if (options.resource) {
       this.resource = options.resource;
     }
-    this.resources = resources || [];
+    this.resources = this.models = resources || [];
 
     var self = this;
     Object.defineProperty(this, 'length', {
@@ -835,7 +835,7 @@
       options || (options = {});
 
       // Empty and refill if not null
-      this.resources = [];
+      this.resources = this.models = [];
       if (!_.isNull(resources)) {
         this.splice(0, 0, resources, {silent: true});
       }
