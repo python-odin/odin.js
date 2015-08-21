@@ -159,7 +159,8 @@
       useDefaultIfNotProvided: false,
       defaultValue: undefined,
       validators: [],
-      errorMessages: {}
+      errorMessages: {},
+      docText: null
     }, options);
 
     _.extend(this.errorMessages, this.defaultErrorMessages, this.errorMessages);
@@ -375,6 +376,17 @@
 
   // Setup all inheritable **Odin.StringField** properties and methods.
   _.extend(Odin.StringField.prototype, BaseField.prototype, {});
+
+  // Odin.ArrayField
+  // ---------------
+
+  Odin.ArrayField = function (options) {
+    BaseField.prototype.constructor.call(this, options);
+  };
+
+  // Setup all inheritable **Odin.ArrayField** properties and methods.
+  _.extend(Odin.ArrayField.prototype, BaseField.prototype, {});
+
 
   // Odin.DictField
   // --------------
@@ -794,6 +806,21 @@
     // Get value at index
     at: function (idx) {
       return this.resources[idx];
+    },
+
+    // Bulk replace all resources, passing null to resources will empty the collection.
+    reset: function (resources, options) {
+      options || (options = {});
+
+      // Empty and refill if not null
+      this.resources = [];
+      if (!_.isNull(resources)) {
+        this.splice(0, 0, resources, {silent: true});
+      }
+
+      if (!options.silent) {
+        this.trigger('reset', this, options);
+      }
     },
 
     toJSON: function () {
