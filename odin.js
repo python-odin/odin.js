@@ -102,7 +102,10 @@
     minValueValidator: function (minValue) {
       return function (value) {
         if (value < minValue) {
-          throw new ValidationError("", 'min_value', {'minValue': minValue});
+          throw new ValidationError(
+            "Ensure this value is greater than or equal to " + minValue,
+            'min_value', {'minValue': minValue}
+          );
         }
       };
     },
@@ -114,7 +117,9 @@
     maxValueValidator: function (maxValue) {
       return function (value) {
         if (value > maxValue) {
-          throw new ValidationError("", 'max_value', {'maxValue': maxValue});
+          throw new ValidationError(
+            "Ensure this value is less than or equal to " + maxValue,
+            'max_value', {'maxValue': maxValue});
         }
       };
     },
@@ -126,7 +131,10 @@
     minLengthValidator: function (minLength) {
       return function (value) {
         if (value.length < minLength) {
-          throw new ValidationError("", 'min_length', {'minValue': minLength});
+          throw new ValidationError(
+            "Ensure this value has at least " + minLength + " characters (it has " + value.length + ").",
+            'min_length', {'minValue': minLength}
+          );
         }
       };
     },
@@ -138,7 +146,10 @@
     maxLengthValidator: function (maxLength) {
       return function (value) {
         if (value.length > maxLength) {
-          throw new ValidationError("", 'max_length', {'maxLength': maxLength});
+          throw new ValidationError(
+            "Ensure this value has at most " + maxLength + " characters (it has " + value.length + ").",
+            'max_length', {'maxLength': maxLength}
+          );
         }
       };
     }
