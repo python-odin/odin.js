@@ -765,8 +765,14 @@
 
       var removed = splice.apply(this.resources, [start, deleteCount].concat(resources));
       if (!options.silent) {
-        // TODO: Change to follow backbone order (model, collection, options, other) for each model
-        if (removed.length) this.trigger('remove', this, start, removed, options);
+        if (removed.length) {
+          // TODO: Change to follow backbone order (model, collection, options, other) for each model
+          this.trigger('removed', this, start, removed, options);
+
+          _.each(removed, function (resource, idx) {
+            this.trigger('remove', resource, this, options, start + idx);
+          }, this);
+        }
         if (resources.length) {
           // TODO: Change to follow backbone order (model, collection, options, other)
           this.trigger('insert', this, start, resources, options);
