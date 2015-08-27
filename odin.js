@@ -576,6 +576,9 @@
       }
       this[f.name] = val;
     }, this);
+
+    // Append a CID so this model can be uniquely identified
+    this.cid = _.uniqueId(this._meta.name);
   };
 
   // Set up all inheritable **Odin.Resource** properties and methods.
@@ -766,7 +769,13 @@
       var removed = splice.apply(this.resources, [start, deleteCount].concat(resources));
       if (!options.silent) {
         // TODO: Change to follow backbone order (model, collection, options, other) for each model
-        if (removed.length) this.trigger('remove', this, start, removed, options);
+        if (removed.length) {
+          this.trigger('removed', this, start, removed, options);
+
+          _.each(removed, function (resource) {
+            this.trigger('remove', resource, this, options);
+          }, this);
+        }
         if (resources.length) {
           // TODO: Change to follow backbone order (model, collection, options, other)
           this.trigger('insert', this, start, resources, options);
