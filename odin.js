@@ -414,7 +414,7 @@
 
   // BaseField that contains a sub-resource.
   var ObjectAs = Odin.ObjectAs = function (resource, options) {
-    this.resource = resource;
+    this.containedResource = resource;
 
     BaseField.prototype.constructor.call(this, options);
   };
@@ -431,7 +431,7 @@
       }
       if (_.isObject(value)) {
         if (_.isUndefined(value._meta)) {
-          return createResourceFromJson(value, this.resource);
+          return createResourceFromJson(value, this.containedResource);
         } else {
           return value;
       }
@@ -450,7 +450,7 @@
 
   // Field that contains an array of resources.
   Odin.ArrayOf = function (resource, options) {
-    this.resource = resource;
+    this.containedResource = resource;
 
     options = _.extend({
       defaultValue: function () { return new ResourceArray(); }
@@ -576,6 +576,9 @@
       }
       this[f.name] = val;
     }, this);
+
+    // Append a CID so this model can be uniquely identified
+    this.cid = _.uniqueId(this._meta.name);
   };
 
   // Set up all inheritable **Odin.Resource** properties and methods.
@@ -765,12 +768,12 @@
 
       var removed = splice.apply(this.resources, [start, deleteCount].concat(resources));
       if (!options.silent) {
+        // TODO: Change to follow backbone order (model, collection, options, other) for each model
         if (removed.length) {
-          // TODO: Change to follow backbone order (model, collection, options, other) for each model
           this.trigger('removed', this, start, removed, options);
 
-          _.each(removed, function (resource, idx) {
-            this.trigger('remove', resource, this, options, start + idx);
+          _.each(removed, function (resource) {
+            this.trigger('remove', resource, this, options);
           }, this);
         }
         if (resources.length) {
@@ -884,8 +887,12 @@
     }, options || {});
 
     var key = _.isUndefined(resource) ? options.typeField : resource.prototype._meta.typeField,
-        resourceName = data[key],
-        resourceType = Odin._getResource(resourceName);
+        resourceName = data[key];
+    // Fallback to defined resource if supplied.
+    if (_.isUndefined(resourceName) && !_.isUndefined(resource)) {
+      resourceName = (resource._meta || resource.prototype._meta).getFullName();
+    }
+    var resourceType = Odin._getResource(resourceName);
     if (_.isUndefined(resourceType)) {
       throw new Error('Resource type `' + resourceName + '` not defined');
     }
