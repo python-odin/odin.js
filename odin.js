@@ -307,6 +307,11 @@
         return null;
       }
 
+      // Check for "falsy" strings
+      if (_.includes(['false', 'off', 'no', '0'], value)) {
+        return false;
+      }
+
       value = Boolean(value);
       if (value === null) {
         throw new ValidationError('Invalid boolean value.')
