@@ -479,7 +479,45 @@
           return ObjectAs.prototype.toJavaScript.call(this, v);
         }, this));
       }
-      throw new ValidationError('Unknown value.'); // TODO: Decent error
+      throw new ValidationError('Unknown array.'); // TODO: Decent error
+    },
+
+    // Prepare a value for insertion into a JSON structure.
+    toJSON: function (value) {
+      return value.toJSON();
+    }
+  });
+
+  // Odin.DictOf field
+  // -----------------
+
+  // Field that contains a dict
+  Odin.DictOf = function (resource, options) {
+    this.containedResource = resource;
+
+    options = _.extend({
+      defaultValue: function () { return new ResourceDict(); }
+    }, options);
+
+    BaseField.prototype.constructor.call(this, options);
+  };
+
+  // Set up all inheritable **odin.DictOf** properties and methods.
+  _.extend(Odin.DictOf.prototype, ObjectAs.prototype, {
+    // Convert a value to field type
+    toJavaScript: function (value) {
+      if (value === null || _.isUndefined(value)) {
+        return null;
+      }
+      if (value instanceof Odin.ResourceDict) {
+        return value;
+      }
+      if (_.isObject(value)) {
+        return new Odin.ResourceDict(_.mapValues(value, function (v) {
+          return ObjectAs.prototype.toJavaScript.call(this, v);
+        }, this));
+      }
+      throw new ValidationError('Invalid object.'); // TODO: Decent error
     },
 
     // Prepare a value for insertion into a JSON structure.
@@ -875,6 +913,77 @@
 
   _.each(methods, function(method) {
     ResourceArray.prototype[method] = function() {
+      var args = slice.call(arguments);
+      args.unshift(this.resources);
+      return _[method].apply(_, args);
+    };
+  });
+
+  // Odin.ResourceDict
+  // -------------------
+
+  var ResourceDict = Odin.ResourceDict = function (resources, options) {
+    options || (options = {});
+    if (options.resource) {
+      this.resource = options.resource;
+    }
+    this.resources = this.models = resources || {};
+
+    var self = this;
+    Object.defineProperty(this, 'length', {
+      get: function () { return _.size(self.resources); }
+    })
+  };
+  // Set up all inheritable **Odin.ResourceDict** properties and methods.
+  _.extend(ResourceDict.prototype, Backbone.Events, {
+    // Add an element to the object
+    add: function (key, resource, options) {
+      options || (options = {});
+      this.resources[key] = resource;
+      if (!options.silent) {
+        this.trigger('add', resource, this, options);
+      }
+    },
+
+    // Remove an element from the object
+    remove: function (key, options) {
+      options || (options = {});
+      var resource = this.resources[key];
+      if (_.undefined(resource)) return;
+      if (!options.silent) {
+        this.trigger('remove', resource, this, options);
+      }
+      return resource;
+    },
+
+    // Bulk replace all resources, passing null to resources will empty the collection.
+    reset: function (resources, options) {
+      options || (options = {});
+
+      // Empty and refill if not null
+      this.resources = this.models = {};
+      if (!_.isObject(resources)) {
+        this.resources = this.models = resources;
+      } else {
+        this.resources = this.models = {};
+      }
+
+      if (!options.silent) {
+        this.trigger('reset', this, options);
+      }
+    },
+
+    toJSON: function () {
+      return _.mapValues(this.resources, function (r) {
+        return r.toJSON();
+      });
+    }
+  });
+
+  methods = ['forEach', 'each', 'map', 'isEmpty'];
+
+  _.each(methods, function(method) {
+    ResourceDict.prototype[method] = function() {
       var args = slice.call(arguments);
       args.unshift(this.resources);
       return _[method].apply(_, args);
