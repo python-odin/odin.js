@@ -496,7 +496,7 @@
     this.containedResource = resource;
 
     options = _.extend({
-      defaultValue: function () { return new ResourceObject(); }
+      defaultValue: function () { return new ResourceDict(); }
     }, options);
 
     BaseField.prototype.constructor.call(this, options);
