@@ -484,7 +484,11 @@
 
     // Prepare a value for insertion into a JSON structure.
     toJSON: function (value) {
-      return value.toJSON();
+      if (value) {
+        return value.toJSON();
+      } else {
+        return null;
+      }
     }
   });
 
