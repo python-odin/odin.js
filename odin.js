@@ -707,7 +707,6 @@
       return "<" + this._meta.fullName + ">";
     },
 
-
     // Return a copy of the model's `attributes` object.
     toJSON: function() {
       var attributes = {};
@@ -716,7 +715,30 @@
         attributes[f.name] = f.toJSON(f.valueFromObject(this));
       }, this);
       return attributes;
-    }
+    },
+
+    sync: function () {
+      return Backbone.sync.apply(this, arguments);
+    },
+
+    // TODO: Populate these methods
+    fetch: function () {
+
+    },
+
+    save: function () {
+
+    },
+
+    destroy: function () {
+
+    },
+
+    url: function () {},
+
+    isNew: function () {},
+
+    isValid: function () {}
   });
 
   // Custom version of extend that builds the internal meta object.
@@ -922,6 +944,8 @@
       return _[method].apply(_, args);
     };
   });
+
+  Odin.ResourceCollection = Odin.ResourceArray;
 
   // Odin.ResourceDict
   // -------------------
