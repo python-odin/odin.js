@@ -722,17 +722,11 @@
     },
 
     // TODO: Populate these methods
-    fetch: function () {
+    fetch: function () {},
 
-    },
+    save: function () {},
 
-    save: function () {
-
-    },
-
-    destroy: function () {
-
-    },
+    destroy: function () {},
 
     url: function () {},
 
