@@ -1,5 +1,7 @@
 # Odin.js
 
-A Javascript implementation of the [Python Odin library](https://odin.readthedocs.org)
+A Javascript implementation of the [Python Odin library](https://odin.readthedocs.org), the goal of
+this library is to mirror the Backbone.js model/collection interfaces but with the more advanced
+validation and support for deep data structures that Odin provides.
 
-[![Build Status](https://travis-ci.org/timsavage/odin.js.svg?branch=master)](https://travis-ci.org/timsavage/odin.js)
+[![Build Status](https://travis-ci.org/python-odin/odin.js.svg?branch=master)](https://travis-ci.org/python-odin/odin.js)
