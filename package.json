@@ -4,7 +4,7 @@
   "description": "Javascript implimentation of the Python Odin library",
   "main": "odin.js",
   "license": "BSD",
-  "author": "Tim Savage <tim.savage@poweredbypenguins.org>",
+  "author": "Tim Savage <tim@savage.company>",
   "keywords": [
     "odin",
     "object-mapping",
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/timsavage/odin-js.git"
+    "url": "http://github.com/python-odin/odin-js.git"
   },
   "scripts": {
     "test": "phantomjs test/vendor/runner.js test/index.html?noglobals=true&coverage=true",
