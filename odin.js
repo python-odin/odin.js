@@ -533,7 +533,7 @@
   // ResourceOptions
   // ---------------
 
-  var META_OPTION_NAMES = ['name', 'namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural'],
+  var META_OPTION_NAMES = ['name', 'namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural', 'idField'],
       DEFAULT_TYPE_FIELD = '$';
 
   function ResourceOptions(metaOptions) {
@@ -551,6 +551,8 @@
 
   // Setup all inheritable **ResourceOptions** properties and methods.
   _.extend(ResourceOptions.prototype, {
+    idField: 'id',
+
     contributeToObject: function (obj) {
       obj.prototype._meta = this;
 
@@ -721,14 +723,35 @@
       return Backbone.sync.apply(this, arguments);
     },
 
-    // TODO: Populate these methods
-    fetch: function () {},
+    // Fetch resource from the server, and decode arguments.
+    fetch: function (options) {
+      options = _.extend({parse: true}, options);
+      var resource = this;
+      var success = options.success;
+      options.success = function (resp) {
+        var serverAttrs = options.parse ? model.parse(resp, options) : resp;
+        resource.set(serverAttrs, options);
+        if (success) success.call(options.context, resource, resp, options);
+        resource.trigger('sync', resource, resp, options);
+      };
+      wrapError(this, options);
+      return this.sync('read', this, options);
+    },
 
     save: function () {},
 
     destroy: function () {},
 
-    url: function () {},
+    url: function () {
+      var base = _.result(this, 'urlRoot') || _.result(this.collection, 'url') || urlError();
+      if (this.isNew()) return base;
+      var id = this.get(this._meta.idField);
+
+    },
+
+    parse: function (resp, options) {
+      return resp;
+    },
 
     isNew: function () {},
 
@@ -1103,6 +1126,19 @@
   // Returns true if the supplied value is "empty"
   var isEmpty = Odin.isEmpty = function (value) {
       return _.isNull(value) || _.isUndefined(value) || value === '';
+  };
+
+  var urlError = function () {
+    throw new Error('A "url" property or function must be specified');
+  };
+
+  // Wrap optional callback with fallback error event.
+  var wrapError = function(resource, options) {
+    var error = options.error;
+    options.error = function(resp) {
+      if (error) error.call(options.context, resource, resp, options);
+      resource.trigger('error', resource, resp, options);
+    };
   };
 
   return Odin;
