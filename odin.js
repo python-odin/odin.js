@@ -1,6 +1,8 @@
 //     Odin.js 0.1.0
+/* jshint node: true, browserify: true, -W030 */
 
 (function(root, factory) {
+  "use strict";
   // Set up Odin appropriately for the environment. Start with AMD.
   if (typeof define === 'function' && define.amd) {
     define(['backbone', 'lodash', 'exports'], function(Backbone, _, exports) {
@@ -18,6 +20,7 @@
     root.Odin = factory(root, {}, root.Backbone, root._);
   }
 }(this, function(root, Odin, Backbone, _) {
+  "use strict";
 
   // Initial Setup
   // -------------
@@ -79,7 +82,7 @@
         return result;
       });
     } else {
-      return this.messages.toString()
+      return this.messages.toString();
     }
   };
   ValidationError.prototype.errorMessages = function () {
@@ -314,7 +317,7 @@
 
       value = Boolean(value);
       if (value === null) {
-        throw new ValidationError('Invalid boolean value.')
+        throw new ValidationError('Invalid boolean value.');
       }
       return value;
     }
@@ -729,9 +732,11 @@
       var resource = this;
       var success = options.success;
       options.success = function (resp) {
-        var serverAttrs = options.parse ? model.parse(resp, options) : resp;
+        var serverAttrs = options.parse ? resource.parse(resp, options) : resp;
         resource.set(serverAttrs, options);
-        if (success) success.call(options.context, resource, resp, options);
+        if (success) {
+          success.call(options.context, resource, resp, options);
+        }
         resource.trigger('sync', resource, resp, options);
       };
       wrapError(this, options);
@@ -744,7 +749,9 @@
 
     url: function () {
       var base = _.result(this, 'urlRoot') || _.result(this.collection, 'url') || urlError();
-      if (this.isNew()) return base;
+      if (this.isNew()) {
+        return base;
+      }
       var id = this.get(this._meta.idField);
 
     },
@@ -811,7 +818,7 @@
     var self = this;
     Object.defineProperty(this, 'length', {
       get: function () { return self.resources.length; }
-    })
+    });
   };
 
   // Set up all inheritable **Odin.ResourceArray** properties and methods.
@@ -841,7 +848,7 @@
 
       // Get resources Array into a consistent type
       if (typeof resources === 'undefined') {
-        resources = []
+        resources = [];
       } else if (resources instanceof Odin.ResourceArray) {
         // Unpack ResourceArray
         resources = resources.resources;
@@ -886,7 +893,7 @@
 
     // Return the first resource with matching attributes. Useful for simples cases of find.
     findWhere: function (attrs) {
-      return this.where(attrs, true)
+      return this.where(attrs, true);
     },
 
     // Append a resource(s) to the end (this varies from push in that it can handle multiple resources)
@@ -911,7 +918,9 @@
 
     // Move a resource from one index to another.
     move: function (from_idx, to_idx, options) {
-      if (from_idx === to_idx) return;
+      if (from_idx === to_idx) {
+        return;
+      }
       options || (options = {});
       var resource = this.resources.splice(from_idx, 1);
       this.splice(to_idx, 0, resource, options);
@@ -977,7 +986,7 @@
     var self = this;
     Object.defineProperty(this, 'length', {
       get: function () { return _.size(self.resources); }
-    })
+    });
   };
   // Set up all inheritable **Odin.ResourceDict** properties and methods.
   _.extend(ResourceDict.prototype, Backbone.Events, {
@@ -994,7 +1003,7 @@
     remove: function (key, options) {
       options || (options = {});
       var resource = this.resources[key];
-      if (_.undefined(resource)) return;
+      if (_.undefined(resource)) { return; }
       if (!options.silent) {
         this.trigger('remove', resource, this, options);
       }
@@ -1136,7 +1145,7 @@
   var wrapError = function(resource, options) {
     var error = options.error;
     options.error = function(resp) {
-      if (error) error.call(options.context, resource, resp, options);
+      if (error) { error.call(options.context, resource, resp, options); }
       resource.trigger('error', resource, resp, options);
     };
   };
