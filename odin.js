@@ -1070,13 +1070,17 @@
     for (i in fields) {
       f = fields[i];
       v = f.valueFromObject(data);
-      try {
-        attrs[f.name] = f.toJavaScript(v);
-      } catch (e) {
-        if (e instanceof ValidationError) {
-          errors[f.name] = e.errorMessages();
-        } else {
-          throw e;
+      if (typeof v === 'undefined') {
+        v = f.useDefaultIfNotProvided ? _.result(f, 'defaultValue') : null;
+      } else {
+        try {
+          attrs[f.name] = f.toJavaScript(v);
+        } catch (e) {
+          if (e instanceof ValidationError) {
+            errors[f.name] = e.errorMessages();
+          } else {
+            throw e;
+          }
         }
       }
     }
