@@ -828,7 +828,9 @@
       options || (options = {});
       this.resources.push(resource);
       if (!options.silent) {
-        this.trigger('insert', this, this.resources.length - 1, [resource], options);
+        var idx = this.resources.length - 1;
+        this.trigger('add', resource, this, options, idx);
+        this.trigger('insert', this, idx, [resource], options);
       }
     },
 
@@ -837,7 +839,8 @@
       options || (options = {});
       var resource = this.resources.pop();
       if (!options.silent) {
-        this.trigger('remove', this, this.resources.length, [resource], options);
+        this.trigger('removed', this, this.resources.length, [resource], options);
+        this.trigger('remove', resource, this, options);
       }
       return resource;
     },
