@@ -536,7 +536,8 @@
   // ResourceOptions
   // ---------------
 
-  var META_OPTION_NAMES = ['name', 'namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural', 'idField'],
+  var META_OPTION_NAMES = ['name', 'namespace', 'abstract', 'typeField', 'verboseName', 'verboseNamePlural',
+      'idField', 'urlRoot', 'url'],
       DEFAULT_TYPE_FIELD = '$';
 
   function ResourceOptions(metaOptions) {
@@ -748,7 +749,7 @@
     destroy: function () {},
 
     url: function () {
-      var base = _.result(this, 'urlRoot') || _.result(this.collection, 'url') || urlError();
+      var base = _.result(this._meta, 'urlRoot') || urlError();
       if (this.isNew()) {
         return base;
       }
@@ -760,7 +761,9 @@
       return resp;
     },
 
-    isNew: function () {},
+    isNew: function () {
+
+    },
 
     isValid: function () {}
   });
