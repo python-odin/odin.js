@@ -758,11 +758,12 @@
     },
 
     parse: function (resp, options) {
-      return resp;
+      return createResourceFromJson(resp, this, {returnAttrs: true});
     },
 
     isNew: function () {
-
+      var id = this.get(this._meta.idField);
+      return (typeof id === 'undefined') || id === null;
     },
 
     isValid: function () {}
@@ -806,6 +807,11 @@
     }
 
     return NewResource;
+  };
+
+  // Method to get the meta options of a either a resource instance or prototype
+  Resource.getMeta = function(resource) {
+    return resource._meta || resource.prototype._meta;
   };
 
   // Odin.ResourceArray
@@ -1057,21 +1063,34 @@
   var createResourceFromJson = Odin.createResourceFromJson = function(data, resource, options) {
     options = _.extend({
       fullClean: true,
-      typeField: DEFAULT_TYPE_FIELD
+      typeField: DEFAULT_TYPE_FIELD,
+      returnAttrs: false
     }, options || {});
 
-    var key = _.isUndefined(resource) ? options.typeField : resource.prototype._meta.typeField,
-        resourceName = data[key];
-    // Fallback to defined resource if supplied.
-    if (_.isUndefined(resourceName) && !_.isUndefined(resource)) {
-      resourceName = (resource._meta || resource.prototype._meta).getFullName();
-    }
-    var resourceType = Odin._getResource(resourceName);
-    if (_.isUndefined(resourceType)) {
-      throw new Error('Resource type `' + resourceName + '` not defined');
+    var resourceName, resourceType, meta;
+    if (typeof resource === 'undefined') {
+      resourceName = data[options.typeField];
+      if (typeof resourceName === 'undefined') {
+        throw new Error('Resource type not defined in JSON');
+      }
+    } else {
+      // Local version of meta
+      meta = Resource.getMeta(resource);
+      resourceName = data[meta.typeField];
+      if (typeof resourceName === 'undefined') {
+        // Fall back to meta
+        resourceName = meta.getFullName();
+      }
     }
 
-    var attrs = {}, errors = {}, fields = getFields(resourceType);
+    // Get actual resource type
+    resourceType = Odin._getResource(resourceName);
+    if (typeof resourceType === 'undefined') {
+      throw new Error('Resource type `' + resourceName + '` not defined');
+    }
+    meta = Resource.getMeta(resourceType);
+
+    var attrs = {}, errors = {}, fields = meta.fields;
     var i, f, v;
     for (i in fields) {
       f = fields[i];
@@ -1095,11 +1114,15 @@
       throw new ValidationError(errors);
     }
 
-    var newResource = new resourceType(attrs);
-    if (options.fullClean) {
-      newResource.fullClean();
+    if (options.returnAttrs) {
+      return attrs;
+    } else {
+      var newResource = new resourceType(attrs);
+      if (options.fullClean) {
+        newResource.fullClean();
+      }
+      return newResource;
     }
-    return newResource;
   };
 
   Odin.buildObjectGraph = function(data, resource) {
