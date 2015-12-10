@@ -11,8 +11,10 @@
     "javascript",
     "backbone"
   ],
+  "peerDependencies": {
+    "backbone": "^1.2.3"
+  },
   "dependencies": {
-    "backbone": "^1.2.3",
     "lodash": "^3.10.1"
   },
   "devDependencies": {
