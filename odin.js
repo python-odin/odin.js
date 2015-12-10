@@ -744,9 +744,47 @@
       return this.sync('read', this, options);
     },
 
-    save: function () {},
+    save: function (key, val, options) {
+      // Handle both `"key", value` and `{key: value}` -style arguments.
+      var attrs;
+      if (key == null || typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
 
-    destroy: function () {},
+      options = _.extend({validate: true}, options);
+
+      if (attrs) {
+        if (!this.set(attrs, options)) return false;
+      }
+      var resource = this;
+      var success = options.success;
+      var attributes = this;
+      options.success = function(resp) {
+        // Ensure attributes are restored during synchronous saves.
+        resource.attributes = attributes;
+        var serverAttrs = options.parse ? resource.parse(resp, options) : resp;
+        if (serverAttrs && !resource.set(serverAttrs, options)) return false;
+        if (success) success.call(options.context, resource, resp, options);
+        resource.trigger('sync', resource, resp, options);
+      };
+      wrapError(this, options);
+
+      var method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
+      if (method === 'patch' && !options.attrs) options.attrs = attrs;
+      var xhr = this.sync(method, this, options);
+
+      // Restore attributes.
+      this.attributes = attributes;
+
+      return xhr;
+    },
+
+    destroy: function () {
+
+    },
 
     url: function () {
       var base = _.result(this._meta, 'urlRoot') || urlError();
@@ -965,6 +1003,24 @@
       return _.map(this.resources, function (r) {
         return r.toJSON();
       });
+    },
+
+    // Proxy `Backbone.sync` by default.
+    sync: function() {
+      return Backbone.sync.apply(this, arguments);
+    },
+
+    // Fetch the default set of resource for this ResourceArray, resetting the
+    // Array when they arrive. If `reset: true` is passed, the response
+    // data will be passed through the `reset` method instead of `set`.
+    fetch: function(options) {
+      return Backbone.Collection.prototype.fetch.call(this, options);
+    },
+
+    // **parse** converts a response into a list of models to be added to the
+    // array. The default implementation is just to pass it through.
+    parse: function(resp, options) {
+      return resp;
     }
   });
 

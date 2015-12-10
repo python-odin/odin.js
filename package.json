@@ -3,7 +3,7 @@
   "version": "0.1.2",
   "description": "Javascript implimentation of the Python Odin library",
   "main": "odin.js",
-  "license": "BSD",
+  "license": "BSD-3-Clause",
   "author": "Tim Savage <tim@savage.company>",
   "keywords": [
     "odin",
