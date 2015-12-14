@@ -931,6 +931,8 @@
           this.trigger('update', this, options, resources, start);
         }
       }
+
+      return removed;
     },
 
     // Return resources with matching attributes. Useful for simple cases of filter.
