@@ -622,13 +622,13 @@
 
     // Set resource fields to values supplied in values object. If a field is not supplied
     // use the field default.
-    eachField(this, function (f) {
+    this.attributes = mapFields(this, function (f) {
       var val = values[f.name];
       if (typeof val === 'undefined') {
         val = f.getDefault();
       }
-      this[f.name] = val;
-    }, this);
+      return val;
+    });
 
     // Append a CID so this model can be uniquely identified
     this.cid = _.uniqueId(this._meta.name);
@@ -638,7 +638,7 @@
   _.extend(Resource.prototype, Backbone.Events, {
     // Get a value of a field from the resource
     get: function (attr) {
-      return this[attr];
+      return this.attributes[attr];
     },
 
     // Set a value on the resource
@@ -663,6 +663,7 @@
       changes = [];
 
       // Set values on the resources
+      var attributes = this.attributes;
       _.each(attrs, function (value, attr) {
         var field = this._meta.getFieldByName(attr);
         if (_.isUndefined(field)) {
@@ -671,16 +672,16 @@
 
         // Validate and assign value and track changes
         value = field.clean(value);
-        if (this[attr] !== value) {
+        if (attributes[attr] !== value) {
           changes.push(attr);
         }
-        this[attr] = value;
+        attributes[attr] = value;
       }, this);
 
       // Trigger change events
       if (!silent) {
         for (var i = 0, l = changes.length; i < l; i++) {
-          this.trigger('change:' + changes[i], this, this[changes[i]], options);
+          this.trigger('change:' + changes[i], this, attributes[changes[i]], options);
         }
         if (changes.length) {
           this.trigger('change', this, options);
@@ -691,10 +692,11 @@
     fullClean: function () {
       var errors = {};
 
+      var attributes = this.attributes;
       eachField(this, function (field) {
-        var value = field.valueFromObject(this);
+        var value = field.valueFromObject(attributes);
         try {
-          this[field.attname] = field.clean(value);
+          attributes[field.attname] = field.clean(value);
         } catch (e) {
           if (e instanceof ValidationError) {
             errors[field.attname] = e.messages;
@@ -715,12 +717,12 @@
 
     // Return a copy of the model's `attributes` object.
     toJSON: function() {
-      var attributes = {};
-      attributes[this._meta.typeField] = this._meta.getFullName();
-      eachField(this, function (f) {
-        attributes[f.name] = f.toJSON(f.valueFromObject(this));
-      }, this);
-      return attributes;
+      var attributes = this.attributes,
+        attrs = mapFields(this, function (f) {
+          return f.toJSON(f.valueFromObject(attributes))
+        });
+      attrs[this._meta.typeField] = this._meta.getFullName();
+      return attrs;
     },
 
     sync: function () {
@@ -782,17 +784,13 @@
       return xhr;
     },
 
-    destroy: function () {
-
-    },
+    destroy: function () {    },
 
     url: function () {
       var base = _.result(this._meta, 'urlRoot') || urlError();
-      if (this.isNew()) {
-        return base;
-      }
+      if (this.isNew()) return base;
       var id = this.get(this._meta.idField);
-
+      return base.replace(/[^\/]$/, '$&/') + encodeURIComponent(id);
     },
 
     parse: function (resp, options) {
@@ -804,7 +802,22 @@
       return (typeof id === 'undefined') || id === null;
     },
 
-    isValid: function () {}
+    isValid: function (options) {
+      _.defaults({validate: true}, options);
+      if (!options.validate) return true;
+      try {
+        this.fullClean();
+      } catch (ex) {
+        if (ex instanceof ValidationError) {
+          this.trigger('invalid', this, ex.messages, _.extend(options, {validationError: ex.messages}));
+          return false;
+        } else {
+          // Rethrow un-handled exception
+          throw ex;
+        }
+      }
+      return true;
+    }
   });
 
   // Custom version of extend that builds the internal meta object.
@@ -1216,11 +1229,17 @@
 
   // A foreach style method to return all fields on a resource
   var eachField = Odin.eachField = function (resource, iterator, context) {
-    if (_.isFunction(resource)) {
-      return _.each(resource.prototype._meta.fields, iterator, context);
-    } else {
-      return _.each(resource._meta.fields, iterator, context);
-    }
+    var fields = getFields(resource);
+    return _.each(fields, iterator, context);
+  };
+
+  // Map all fields and return an object {field.name: value} returned by iterator function.
+  var mapFields = Odin.mapField = function (resource, iterator, context) {
+    var attrs = {};
+    eachField(resource, function (field) {
+      attrs[field.name] = iterator.apply(context, arguments);
+    });
+    return attrs;
   };
 
   // Returns true if the supplied value is "empty"
