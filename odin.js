@@ -277,7 +277,7 @@
 
     // Returns a boolean of whether this field has a default value.
     hasDefault: function() {
-      return !_.isUndefined(this.defaultValue);
+      return !isUndefined(this.defaultValue);
     },
 
     // Returns the default value for this field.
@@ -431,14 +431,14 @@
   _.extend(ObjectAs.prototype, BaseField.prototype, {
     // Convert a value to a field type
     toJavaScript: function (value) {
-      if (value === null || _.isUndefined(value)) {
+      if (value === null || isUndefined(value)) {
         return null;
       }
       if (value instanceof this.resource) {
         return value;
       }
       if (_.isObject(value)) {
-        if (_.isUndefined(value._meta)) {
+        if (isUndefined(value._meta)) {
           return createResourceFromJson(value, this.containedResource);
         } else {
           return value;
@@ -449,7 +449,7 @@
 
     // Prepare a value for insertion into a JSON structure
     toJSON: function (value) {
-      return _.isNull(value) ? null : value.toJSON();
+      return isUndefinedOfNull(value) ? null : value.toJSON();
     }
   });
 
@@ -471,7 +471,7 @@
   _.extend(Odin.ArrayOf.prototype, ObjectAs.prototype, {
     // Convert a value to field type
     toJavaScript: function (value) {
-      if (value === null || _.isUndefined(value)) {
+      if (isUndefinedOfNull(value)) {
         return null;
       }
       if (value instanceof Odin.ResourceArray) {
@@ -513,7 +513,7 @@
   _.extend(Odin.DictOf.prototype, ObjectAs.prototype, {
     // Convert a value to field type
     toJavaScript: function (value) {
-      if (value === null || _.isUndefined(value)) {
+      if (isUndefinedOfNull(value)) {
         return null;
       }
       if (value instanceof Odin.ResourceDict) {
@@ -570,22 +570,22 @@
         delete this.metaOptions;
       }
 
-      if (_.isUndefined(this.name)) {
+      if (isUndefined(this.name)) {
           throw new Error('Name not supplied.');
       }
-      if (_.isNull(this.verboseName)) {
+      if (isNull(this.verboseName)) {
         this.verboseName = this.name.replace('_', ' ').trim('_ ');
       }
-      if (_.isNull(this.verboseNamePlural)) {
+      if (isNull(this.verboseNamePlural)) {
         this.verboseNamePlural = this.verboseName + 's';
       }
 
       var parentMeta = obj.__super__._meta;
-      if (!_.isUndefined(parentMeta)) {
+      if (!isUndefined(parentMeta)) {
         // Copy fields
         this.fields = parentMeta.fields.slice(0);
 
-        if (_.isUndefined(this.namespace)) {
+        if (isUndefined(this.namespace)) {
           this.namespace = parentMeta.namespace;
         }
       }
@@ -597,15 +597,15 @@
     },
 
     getFullName: function () {
-      if (_.isUndefined(this._resourceName)) {
-        this._resourceName = (_.isUndefined(this.namespace) ? '' : this.namespace + '.') + this.name;
+      if (isUndefined(this._resourceName)) {
+        this._resourceName = (isUndefined(this.namespace) ? '' : this.namespace + '.') + this.name;
       }
       return this._resourceName;
     },
 
     getFieldByName: function (name) {
       // Lazy generate a lookup map.
-      if (_.isUndefined(this._fieldMap)) {
+      if (isUndefined(this._fieldMap)) {
         var fieldMap = {};
         _.map(this.fields, function (f) { fieldMap[f.name] = f; });
         this._fieldMap = fieldMap;
@@ -666,7 +666,7 @@
       var attributes = this.attributes;
       _.each(attrs, function (value, attr) {
         var field = this._meta.getFieldByName(attr);
-        if (_.isUndefined(field)) {
+        if (isUndefined(field)) {
           throw new Error('Unknown field `' + attr + '`');
         }
 
@@ -1005,7 +1005,7 @@
 
       // Empty and refill if not null
       this.resources = this.models = [];
-      if (!_.isNull(resources)) {
+      if (!isNull(resources)) {
         this.splice(0, 0, resources, {silent: true});
       }
 
@@ -1244,7 +1244,22 @@
 
   // Returns true if the supplied value is "empty"
   var isEmpty = Odin.isEmpty = function (value) {
-      return _.isNull(value) || _.isUndefined(value) || value === '';
+    return (value === null) || (typeof value === 'undefined') || (value === '');
+  };
+
+  // Returns true if the supplied value is undefined or null
+  var isUndefinedOfNull = Odin.isUndefinedOfNull = function (value) {
+    return (value === null) || (typeof value === 'undefined');
+  };
+
+  // Value is null
+  var isNull = Odin.isNull = function (value) {
+    return value === null;
+  };
+
+  // Value is undefined
+  var isUndefined = Odin.isUndefined = function (value) {
+    return typeof value === 'undefined';
   };
 
   var urlError = function () {
