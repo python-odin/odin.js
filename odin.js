@@ -656,7 +656,9 @@
         (attrs = {})[attr] = value;
       }
 
-      options || (options = {});
+      options = _.extend({
+        ignoreUnknown: false
+      }, options);
 
       // Extract attributes and options.
       silent = options.silent;
@@ -667,6 +669,7 @@
       _.each(attrs, function (value, attr) {
         var field = this._meta.getFieldByName(attr);
         if (isUndefined(field)) {
+          if (options.ignoreUnknown) return;
           throw new Error('Unknown field `' + attr + '`');
         }
 
@@ -687,6 +690,8 @@
           this.trigger('change', this, options);
         }
       }
+
+      return true;
     },
 
     fullClean: function () {
@@ -756,14 +761,15 @@
         (attrs = {})[key] = val;
       }
 
-      options = _.extend({validate: true}, options);
+      // Ignore unknown fields on matching.
+      options = _.extend({validate: true, ignoreUnknown: true}, options);
 
       if (attrs) {
         if (!this.set(attrs, options)) return false;
       }
       var resource = this;
       var success = options.success;
-      var attributes = this;
+      var attributes = this.attributes;
       options.success = function(resp) {
         // Ensure attributes are restored during synchronous saves.
         resource.attributes = attributes;
