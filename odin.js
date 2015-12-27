@@ -1005,6 +1005,23 @@
       return this.resources[idx];
     },
 
+    set: function (resources, options) {
+      if (resources == null) return;
+
+      options = _.defaults({}, options, {add: true, remove: true, merge: true});
+      if (options.parse) resources = this.parse(resources, options);
+
+      if (resources instanceof Odin.ResourceArray) {
+        resources = resources.resources;
+      }
+
+      var singular = !_.isArray(resources);
+      resources = singular ? [resources] : resources.slice();
+
+      // For now just cheat and do a silent set.
+      this.reset(resources);
+    },
+
     // Bulk replace all resources, passing null to resources will empty the collection.
     reset: function (resources, options) {
       options || (options = {});
@@ -1041,7 +1058,7 @@
     // **parse** converts a response into a list of models to be added to the
     // array. The default implementation is just to pass it through.
     parse: function(resp, options) {
-      return resp;
+      return buildObjectGraph(resp);
     }
   });
 
@@ -1202,7 +1219,7 @@
     }
   };
 
-  Odin.buildObjectGraph = function(data, resource) {
+  var buildObjectGraph = Odin.buildObjectGraph = function(data, resource) {
     if (_.isArray(data)) {
       return new ResourceArray(_.map(data, function (d) {
           return createResourceFromJson(d, resource);
