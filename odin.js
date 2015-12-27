@@ -1005,11 +1005,15 @@
       options = _.defaults({}, options, {add: true, remove: true, merge: true});
       if (options.parse) resources = this.parse(resources, options);
 
+      if (resources instanceof Odin.ResourceArray) {
+        resources = resources.resources;
+      }
+
       var singular = !_.isArray(resources);
       resources = singular ? [resources] : resources.slice();
 
       // For now just cheat and do a silent set.
-      this.reset(resources, {silent: true});
+      this.reset(resources);
     },
 
     // Bulk replace all resources, passing null to resources will empty the collection.
