@@ -958,7 +958,7 @@
     where: function (attrs, first) {
       var matches = _.matches(attrs);
       return this[first ? 'find' : 'filter'](function (resource) {
-        return matches(resource);
+        return matches(resource.attributes);
       });
     },
 
