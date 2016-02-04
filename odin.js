@@ -251,7 +251,7 @@
     validate: function (value) {
       var choices = this.getChoices();
       if (choices !== null && !isEmpty(value)) {
-        if (_.any(choices, function (v){ return v[0] === value; })) {
+        if (_.some(choices, function (v){ return v[0] === value; })) {
           return;
         }
         throw new ValidationError(this.errorMessages.invalid_choice);
@@ -288,6 +288,17 @@
     // Returns the value of this field in the given resource instance.
     valueFromObject: function (obj) {
       return _.has(obj, this.attname) ? obj[this.attname] : undefined;
+    },
+
+    // Returns a display value of this field in the given resource instance.
+    displayValueFromObject: function (obj) {
+      var value = this.valueFromObject(obj);
+      var choices = this.getChoices();
+      if (choices) {
+        return _.fromPairs(choices)[value] || value;
+      } else {
+        return value;
+      }
     },
 
     // Prepare value for use in JSON format.
@@ -480,7 +491,7 @@
       if (_.isArray(value)) {
         return new Odin.ResourceArray(_.map(value, function (v) {
           return ObjectAs.prototype.toJavaScript.call(this, v);
-        }, this));
+        }.bind(this)));
       }
       throw new ValidationError('Unknown array.'); // TODO: Decent error
     },
@@ -679,7 +690,7 @@
           changes.push(attr);
         }
         attributes[attr] = value;
-      }, this);
+      }.bind(this));
 
       // Trigger change events
       if (!silent) {
