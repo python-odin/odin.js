@@ -234,7 +234,7 @@
             throw e;
           }
         }
-      }, this);
+      }.bind(this));
 
       if (errors.length) {
         throw new ValidationError(errors);
@@ -533,7 +533,7 @@
       if (_.isObject(value)) {
         return new Odin.ResourceDict(_.mapValues(value, function (v) {
           return ObjectAs.prototype.toJavaScript.call(this, v);
-        }, this));
+        }.bind(this)));
       }
       throw new ValidationError('Invalid object.'); // TODO: Decent error
     },
@@ -868,7 +868,7 @@
     // Register fields with the resource
     _.each(fields, function (field, name) {
       addToObject(NewResource, name, field);
-    }, this);
+    }.bind(this));
 
     if (!NewResource.prototype._meta.abstract) {
       Odin._addResource(NewResource);
@@ -947,7 +947,7 @@
 
           _.each(removed, function (resource) {
             this.trigger('remove', resource, this, options);
-          }, this);
+          }.bind(this));
         }
         if (resources.length) {
           // TODO: Change to follow backbone order (model, collection, options, other)
@@ -955,7 +955,7 @@
 
           _.each(resources, function (resource, idx) {
             this.trigger('add', resource, this, options, start + idx);
-          }, this);
+          }.bind(this));
         }
         if (removed.length || resources.length) {
           this.trigger('update', this, options, resources, start);
