@@ -224,7 +224,7 @@
           validator(value);
         } catch (e) {
           if (e instanceof ValidationError) {
-            if (_.has(e, 'code') && _.contains(this.errorMessages, e.code)) {
+            if (_.has(e, 'code') && _.includes(this.errorMessages, e.code)) {
               var message = this.errorMessages[e.code];
               errors.push(message);
             } else {
@@ -1075,7 +1075,7 @@
 
   var methods = ['forEach', 'each', 'map', 'collect', 'reduce', 'foldl',
     'inject', 'reduceRight', 'foldr', 'find', 'detect', 'filter', 'select',
-    'reject', 'every', 'all', 'some', 'any', 'include', 'contains', 'invoke',
+    'reject', 'every', 'all', 'some', 'any', 'include', 'includes', 'invoke',
     'max', 'min', 'toArray', 'size', 'first', 'head', 'take', 'initial', 'rest',
     'tail', 'drop', 'last', 'without', 'difference', 'indexOf', 'shuffle',
     'lastIndexOf', 'isEmpty', 'chain', 'sample', 'findIndex'];
